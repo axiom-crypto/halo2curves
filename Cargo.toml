@@ -36,7 +36,7 @@ blake2b_simd = "1"
 maybe-rayon = { version = "0.1.0", default-features = false }
 
 [features]
-default = ["reexport", "bits", "multicore"]
+default = ["reexport", "bits", "multicore", "bn256-table", "derive_serde"]
 multicore = ["maybe-rayon/threads"]
 asm = []
 bits = ["ff/bits"]
