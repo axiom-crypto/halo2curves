@@ -1,7 +1,7 @@
 use crate::arithmetic::mul_512;
 use crate::arithmetic::sbb;
-use crate::arithmetic::CurveEndo;
 use crate::arithmetic::EndoParameters;
+use crate::arithmetic::{CurveAffineExt, CurveEndo};
 use crate::bn256::Fq;
 use crate::bn256::Fq2;
 use crate::bn256::Fr;

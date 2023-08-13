@@ -9,7 +9,7 @@ use crate::{
     impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
     new_curve_impl,
 };
-use crate::{Coordinates, CurveAffine, CurveExt};
+use crate::{Coordinates, CurveAffine, CurveAffineExt, CurveExt};
 use core::cmp;
 use core::fmt::Debug;
 use core::iter::Sum;

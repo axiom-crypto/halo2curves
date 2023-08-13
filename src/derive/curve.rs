@@ -950,6 +950,11 @@ macro_rules! new_curve_impl {
             }
         }
 
+        impl CurveAffineExt for $name_affine {
+            fn into_coordinates(self) -> (Self::Base, Self::Base) {
+                (self.x, self.y)
+            }
+        }
 
         impl_binops_additive!($name, $name);
         impl_binops_additive!($name, $name_affine);
