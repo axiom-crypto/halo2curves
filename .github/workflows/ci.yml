@@ -32,7 +32,6 @@ env:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
-  
 
 jobs:
   test:
@@ -42,7 +41,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - feature: 
+          - feature:
           - feature: default
     steps:
       - uses: actions/checkout@v2
@@ -95,7 +94,8 @@ jobs:
   bench:
     if: github.event.pull_request.draft == false
     name: Bench
-    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    runs-on: ubuntu-latest-m
     strategy:
       matrix:
         include:
