@@ -305,7 +305,6 @@ macro_rules! new_curve_impl {
                 }
 
                 paste::paste! {
-                    use ::serde::de::Error as _;
                     impl<'de> ::serde::Deserialize<'de> for $name {
                         fn deserialize<D: ::serde::Deserializer<'de>>(
                             deserializer: D,
@@ -334,7 +333,6 @@ macro_rules! new_curve_impl {
                 }
 
                 paste::paste! {
-                    use ::serde::de::Error as _;
                     impl<'de> ::serde::Deserialize<'de> for $name_affine {
                         fn deserialize<D: ::serde::Deserializer<'de>>(
                             deserializer: D,
