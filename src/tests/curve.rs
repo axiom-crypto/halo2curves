@@ -2,6 +2,7 @@
 
 use crate::ff::Field;
 use crate::group::prime::PrimeCurveAffine;
+use crate::legendre::Legendre;
 use crate::tests::fe_from_str;
 use crate::{group::GroupEncoding, serde::SerdeObject};
 use crate::{hash_to_curve, CurveAffine, CurveExt};
@@ -74,9 +75,21 @@ where
             assert_eq!(affine_point, affine_point_rec);
         }
         {
+            let affine_json = serde_json::to_string(&affine_point).unwrap();
+            let reader = std::io::Cursor::new(affine_json);
+            let affine_point_rec: G::AffineExt = serde_json::from_reader(reader).unwrap();
+            assert_eq!(affine_point, affine_point_rec);
+        }
+        {
             let projective_bytes = bincode::serialize(&projective_point).unwrap();
             let reader = std::io::Cursor::new(projective_bytes);
             let projective_point_rec: G = bincode::deserialize_from(reader).unwrap();
+            assert_eq!(projective_point, projective_point_rec);
+        }
+        {
+            let projective_json = serde_json::to_string(&projective_point).unwrap();
+            let reader = std::io::Cursor::new(projective_json);
+            let projective_point_rec: G = serde_json::from_reader(reader).unwrap();
             assert_eq!(projective_point, projective_point_rec);
         }
     }
@@ -343,7 +356,9 @@ pub fn svdw_map_to_curve_test<G: CurveExt>(
     z: G::Base,
     precomputed_constants: [&'static str; 4],
     test_vector: impl IntoIterator<Item = (&'static str, (&'static str, &'static str))>,
-) {
+) where
+    <G as CurveExt>::Base: Legendre,
+{
     let [c1, c2, c3, c4] = hash_to_curve::svdw_precomputed_constants::<G>(z);
     assert_eq!([c1, c2, c3, c4], precomputed_constants.map(fe_from_str));
     for (u, (x, y)) in test_vector.into_iter() {

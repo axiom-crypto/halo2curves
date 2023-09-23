@@ -1,7 +1,7 @@
 #[cfg(feature = "asm")]
 use crate::bn256::assembly::field_arithmetic_asm;
 #[cfg(not(feature = "asm"))]
-use crate::{field_arithmetic, field_specific};
+use crate::{arithmetic::macx, field_arithmetic, field_specific};
 
 #[cfg(feature = "bn256-table")]
 #[rustfmt::skip]
@@ -18,7 +18,7 @@ pub use table::FR_TABLE;
 #[cfg(not(feature = "bn256-table"))]
 use crate::impl_from_u64;
 
-use crate::arithmetic::{adc, mac, macx, sbb};
+use crate::arithmetic::{adc, mac, sbb};
 use crate::ff::{FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
 use crate::{
     field_bits, field_common, impl_add_binop_specify_output, impl_binops_additive,
@@ -31,9 +31,6 @@ use core::ops::{Add, Mul, Neg, Sub};
 use rand::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
-#[cfg(feature = "derive_serde")]
-use serde::{Deserialize, Serialize};
-
 /// This represents an element of $\mathbb{F}_r$ where
 ///
 /// `r = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`
@@ -43,8 +40,10 @@ use serde::{Deserialize, Serialize};
 // integers in little-endian order. `Fr` values are always in
 // Montgomery form; i.e., Fr(a) = aR mod r, with R = 2^256.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
 pub struct Fr(pub(crate) [u64; 4]);
+
+#[cfg(feature = "derive_serde")]
+crate::serialize_deserialize_32_byte_primefield!(Fr);
 
 /// Constant representing the modulus
 /// r = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
@@ -166,6 +165,7 @@ field_common!(
     R3
 );
 impl_sum_prod!(Fr);
+prime_field_legendre!(Fr);
 
 #[cfg(not(feature = "bn256-table"))]
 impl_from_u64!(Fr, R2);
@@ -462,5 +462,10 @@ mod test {
         let _res: Vec<_> = base.map(Fr::from).collect();
 
         end_timer!(timer);
+    }
+
+    #[test]
+    fn test_quadratic_residue() {
+        crate::tests::field::random_quadratic_residue_test::<Fr>();
     }
 }
