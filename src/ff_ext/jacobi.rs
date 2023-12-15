@@ -219,6 +219,7 @@ impl<const L: usize> Mul<i64> for &LInt<L> {
         } else {
             (other as u64, 0, 0)
         };
+        #[allow(clippy::needless_range_loop)]
         for i in 0..L {
             (data[i], carry) = Self::Output::prodsum(self.0[i] ^ mask, other, 0, carry);
         }
