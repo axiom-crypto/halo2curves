@@ -3,7 +3,7 @@ use crate::ff::WithSmallOrderMulGroup;
 use crate::ff::{Field, PrimeField};
 use crate::group::{prime::PrimeCurveAffine, Curve, Group as _, GroupEncoding};
 use crate::hash_to_curve::svdw_hash_to_curve;
-use crate::{Coordinates, CurveAffine, CurveExt};
+use crate::{Coordinates, CurveAffine, CurveAffineExt, CurveExt};
 use core::cmp;
 use core::fmt::Debug;
 use core::iter::Sum;
