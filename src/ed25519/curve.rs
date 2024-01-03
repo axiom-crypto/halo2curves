@@ -925,12 +925,12 @@ impl TwistedEdwardsCurveExt for Ed25519 {
     }
 }
 
-pub trait TwistedEdwardsCurveAffine: CurveAffine {
+pub trait TwistedEdwardsCurveAffineExt: CurveAffineExt {
     fn a() -> <Self as CurveAffine>::Base;
     fn d() -> <Self as CurveAffine>::Base;
 }
 
-impl TwistedEdwardsCurveAffine for Ed25519Affine {
+impl TwistedEdwardsCurveAffineExt for Ed25519Affine {
     fn a() -> Fq {
         -Fq::ONE
     }
