@@ -6,7 +6,7 @@ use core::fmt::Debug;
 use core::iter::Sum;
 use core::ops::{Add, Mul, Neg, Sub};
 use ff::{BatchInverter, Field, PrimeField};
-use group::{self, Curve, Group};
+use group::{self, Curve};
 use group::{prime::PrimeCurveAffine, GroupEncoding};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -382,7 +382,7 @@ impl CurveExt for Ed25519 {
     }
 
     fn b() -> Self::Base {
-        ED25519_D
+        unimplemented!()
     }
 
     fn new_jacobian(_x: Self::Base, _y: Self::Base, _z: Self::Base) -> CtOption<Self> {
@@ -697,7 +697,7 @@ impl CurveAffine for Ed25519Affine {
     }
 
     fn b() -> Self::Base {
-        ED25519_D
+        unimplemented!()
     }
 }
 
@@ -913,6 +913,36 @@ impl<'a, 'b> Mul<&'b Fr> for &'a Ed25519Affine {
 impl CurveAffineExt for Ed25519Affine {
     fn into_coordinates(self) -> (Self::Base, Self::Base) {
         (self.x, self.y)
+    }
+}
+
+pub trait TwistedEdwardsCurveExt: CurveExt {
+    fn a() -> <Self as CurveExt>::Base;
+    fn d() -> <Self as CurveExt>::Base;
+}
+
+impl TwistedEdwardsCurveExt for Ed25519 {
+    fn a() -> Fq {
+        -Fq::ONE
+    }
+
+    fn d() -> Fq {
+        ED25519_D
+    }
+}
+
+pub trait TwistedEdwardsCurveAffine: CurveAffine {
+    fn a() -> <Self as CurveAffine>::Base;
+    fn d() -> <Self as CurveAffine>::Base;
+}
+
+impl TwistedEdwardsCurveAffine for Ed25519Affine {
+    fn a() -> Fq {
+        -Fq::ONE
+    }
+
+    fn d() -> Fq {
+        ED25519_D
     }
 }
 
