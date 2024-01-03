@@ -49,7 +49,7 @@ const MODULUS_STR: &str = "0x7ffffffffffffffffffffffffffffffffffffffffffffffffff
 /// `GF(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed).primitive_element()`
 const MULTIPLICATIVE_GENERATOR: Fq = Fq::from_raw([0x02, 0x0, 0x0, 0x0]);
 
-/// INV = -(p^{-1} mod 2^64) mod 2^64
+/// INV = -(q^{-1} mod 2^64) mod 2^64
 const INV: u64 = 0x86bca1af286bca1b;
 
 /// R = 2^256 mod q
@@ -72,7 +72,7 @@ const TWO_INV: Fq = Fq::from_raw([
     0x3fffffffffffffff,
 ]);
 
-/// sqrt(-1) mod q = 2^((p - 1) / 4) mod q
+/// sqrt(-1) mod q = 2^((q - 1) / 4) mod q
 const SQRT_MINUS_ONE: Fq = Fq::from_raw([
     0xc4ee1b274a0ea0b0,
     0x2f431806ad2fe478,
