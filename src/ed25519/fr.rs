@@ -159,14 +159,14 @@ impl ff::Field for Fr {
         //      = a^((p + 3) / 8) * (2^((p - 1) / 4))
         //        OR
         //        Doesn't exist
-        let x1 = self.pow(&[
+        let x1 = self.pow([
             0xcb024c634b9eba7e,
             0x029bdf3bd45ef39a,
             0x0000000000000000,
             0x0200000000000000,
         ]);
 
-        let choice1 = x1.square().ct_eq(&self);
+        let choice1 = x1.square().ct_eq(self);
         let choice2 = x1.square().ct_eq(&-self);
 
         let sqrt = Self::conditional_select(&x1, &(x1 * SQRT_MINUS_ONE), choice2);
