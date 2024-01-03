@@ -155,12 +155,6 @@ impl Ed25519 {
     }
 }
 
-impl Ed25519 {
-    fn endomorphism_base(&self) -> Self {
-        unimplemented!();
-    }
-}
-
 impl Ed25519Affine {
     /// Constructs the neutral element `(0, 1)`.
     pub const fn identity() -> Self {
@@ -351,8 +345,13 @@ impl CurveExt for Ed25519 {
 
     const CURVE_ID: &'static str = "ed25519";
 
+    fn is_on_curve(&self) -> Choice {
+        let affine = Ed25519Affine::from(*self);
+        !self.z.is_zero() & affine.is_on_curve() & (affine.x * affine.y * self.z).ct_eq(&self.t)
+    }
+
     fn endo(&self) -> Self {
-        self.endomorphism_base()
+        unimplemented!();
     }
 
     fn jacobian_coordinates(&self) -> (Fq, Fq, Fq) {
@@ -361,14 +360,6 @@ impl CurveExt for Ed25519 {
 
     fn hash_to_curve<'a>(_: &'a str) -> Box<dyn Fn(&[u8]) -> Self + 'a> {
         unimplemented!();
-    }
-
-    fn is_on_curve(&self) -> Choice {
-        let affine = Ed25519Affine::from(*self);
-
-        println!("affine: {:?}", affine);
-
-        !self.z.is_zero() & affine.is_on_curve() & (affine.x * affine.y * self.z).ct_eq(&self.t)
     }
 
     fn a() -> Self::Base {

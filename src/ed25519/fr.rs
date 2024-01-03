@@ -45,6 +45,10 @@ const MODULUS_LIMBS_32: [u32; 8] = [
 ///Constant representing the modulus as static str
 const MODULUS_STR: &str = "0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed";
 
+/// Obtained with sage:
+/// `GF(0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed).primitive_element()`
+const MULTIPLICATIVE_GENERATOR: Fr = Fr::from_raw([0x02, 0x0, 0x0, 0x0]);
+
 /// INV = -(q^{-1} mod 2^64) mod 2^64
 const INV: u64 = 0xd2b51da312547e1b;
 
@@ -91,9 +95,26 @@ const SQRT_MINUS_ONE: Fr = Fr::from_raw([
     0x094a7310e07981e7,
 ]);
 
-const ZETA: Fr = Fr::zero();
-const DELTA: Fr = Fr::zero();
-const ROOT_OF_UNITY_INV: Fr = Fr::zero();
+// Element in small order subgroup (3-order)
+const ZETA: Fr = Fr::from_raw([
+    0x158687e51e07e223,
+    0x471dd911c6cce91e,
+    0xeb08f579fb8841ae,
+    0x0378d9ddc674005f,
+]);
+const ROOT_OF_UNITY: Fr = Fr::from_raw([
+    0xbe8775dfebbe07d4,
+    0x0ef0565342ce83fe,
+    0x7d3d6d60abc1c27a,
+    0x094a7310e07981e7,
+]);
+const ROOT_OF_UNITY_INV: Fr = Fr::from_raw([
+    0x998aed3a7137cc19,
+    0x05eea38b602918d7,
+    0x82c2929f543e3d86,
+    0x06b58cef1f867e18,
+]);
+const DELTA: Fr = Fr::from_raw([0x10, 0, 0, 0]);
 
 use crate::{
     field_arithmetic, field_common, field_specific, impl_add_binop_specify_output,
@@ -213,18 +234,15 @@ impl ff::Field for Fr {
 impl ff::PrimeField for Fr {
     type Repr = [u8; 32];
 
+    const MODULUS: &'static str = MODULUS_STR;
     const NUM_BITS: u32 = 256;
     const CAPACITY: u32 = 255;
-    const MODULUS: &'static str = MODULUS_STR;
-    /// TODO
-    const MULTIPLICATIVE_GENERATOR: Self = Self::one();
-    /// TODO
-    const ROOT_OF_UNITY: Self = Self::one();
-    /// TODO
-    const ROOT_OF_UNITY_INV: Self = ROOT_OF_UNITY_INV;
     const TWO_INV: Self = TWO_INV;
+    const MULTIPLICATIVE_GENERATOR: Self = MULTIPLICATIVE_GENERATOR;
+    const S: u32 = 2;
+    const ROOT_OF_UNITY: Self = ROOT_OF_UNITY;
+    const ROOT_OF_UNITY_INV: Self = ROOT_OF_UNITY_INV;
     const DELTA: Self = DELTA;
-    const S: u32 = 6;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
         let mut tmp = Fr([0, 0, 0, 0]);
@@ -289,7 +307,6 @@ impl FromUniformBytes<64> for Fr {
 }
 
 impl WithSmallOrderMulGroup<3> for Fr {
-    /// TODO
     const ZETA: Self = ZETA;
 }
 
