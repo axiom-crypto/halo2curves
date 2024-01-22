@@ -81,7 +81,8 @@ const SQRT_MINUS_ONE: Fq = Fq::from_raw([
 ]);
 
 // Element in small order subgroup (3-order)
-// GF(q).primitive_element() ** ((q - 1) // N) where N = 3
+// Sage:
+// `GF(q).primitive_element() ** ((q - 1) // N)` where N = 3
 const ZETA: Fq = Fq::from_raw([
     0xaa86d89d8618e538,
     0x1a1aada8413a4550,
@@ -91,8 +92,8 @@ const ZETA: Fq = Fq::from_raw([
 // The `2^s` root of unity.
 // It can be calculated by exponentiating `MULTIPLICATIVE_GENERATOR` by `t`,
 // where `2^s * t = q - 1` with `t` odd.
-//
-// GF(q).primitive_element() ** t
+// Sage:
+// `GF(q).primitive_element() ** t`
 const ROOT_OF_UNITY: Fq = Fq::from_raw([
     0xc4ee1b274a0ea0b0,
     0x2f431806ad2fe478,
@@ -107,7 +108,8 @@ const ROOT_OF_UNITY_INV: Fq = Fq::from_raw([
     0x547cdb7fb03e20f4,
 ]);
 // Generator of the `t-order` multiplicative subgroup
-// GF(q).primitive_element() ** (2**s)
+// Sage:
+// `GF(q).primitive_element() ** (2**s)`
 const DELTA: Fq = Fq::from_raw([0x10, 0, 0, 0]);
 
 use crate::{
