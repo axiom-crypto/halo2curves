@@ -9,8 +9,10 @@ use ff::{BatchInverter, Field, PrimeField};
 use group::{self, Curve};
 use group::{prime::PrimeCurveAffine, GroupEncoding};
 use rand::RngCore;
-use serde::{Deserialize, Serialize};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
+
+#[cfg(feature = "derive_serde")]
+use serde::{Deserialize, Serialize};
 
 const ED25519_GENERATOR_X: Fq = Fq::from_raw([
     0xc956_2d60_8f25_d51a,
@@ -43,7 +45,8 @@ use crate::{
     impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
 };
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
 pub struct Ed25519 {
     pub x: Fq,
     pub y: Fq,
@@ -51,7 +54,8 @@ pub struct Ed25519 {
     pub t: Fq,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Hash)]
+#[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
 pub struct Ed25519Affine {
     pub x: Fq,
     pub y: Fq,
