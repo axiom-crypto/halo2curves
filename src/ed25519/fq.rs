@@ -46,7 +46,7 @@ const MODULUS_LIMBS_32: [u32; 8] = [
 const MODULUS_STR: &str = "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed";
 
 /// Obtained with sage:
-/// `GF(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed).primitive_element()`
+/// `GF(q).primitive_element()`
 const MULTIPLICATIVE_GENERATOR: Fq = Fq::from_raw([0x02, 0x0, 0x0, 0x0]);
 
 /// INV = -(q^{-1} mod 2^64) mod 2^64
@@ -81,24 +81,33 @@ const SQRT_MINUS_ONE: Fq = Fq::from_raw([
 ]);
 
 // Element in small order subgroup (3-order)
+// GF(q).primitive_element() ** ((q - 1) // N) where N = 3
 const ZETA: Fq = Fq::from_raw([
     0xaa86d89d8618e538,
     0x1a1aada8413a4550,
     0xd9872fccc55bd529,
     0x381cba36aa6565b5,
 ]);
+// The `2^s` root of unity.
+// It can be calculated by exponentiating `MULTIPLICATIVE_GENERATOR` by `t`,
+// where `2^s * t = q - 1` with `t` odd.
+//
+// GF(q).primitive_element() ** t
 const ROOT_OF_UNITY: Fq = Fq::from_raw([
     0xc4ee1b274a0ea0b0,
     0x2f431806ad2fe478,
     0x2b4d00993dfbd7a7,
     0x2b8324804fc1df0b,
 ]);
+// Inverse of `ROOT_OF_UNITY`
 const ROOT_OF_UNITY_INV: Fq = Fq::from_raw([
     0x3b11e4d8b5f15f3d,
     0xd0bce7f952d01b87,
     0xd4b2ff66c2042858,
     0x547cdb7fb03e20f4,
 ]);
+// Generator of the `t-order` multiplicative subgroup
+// GF(q).primitive_element() ** (2**s)
 const DELTA: Fq = Fq::from_raw([0x10, 0, 0, 0]);
 
 use crate::{
@@ -225,6 +234,7 @@ impl ff::PrimeField for Fq {
     const CAPACITY: u32 = 255;
     const TWO_INV: Self = TWO_INV;
     const MULTIPLICATIVE_GENERATOR: Self = MULTIPLICATIVE_GENERATOR;
+    // An integer `s` satisfying the equation `2^s * t = modulus - 1` with `t` odd.
     const S: u32 = 2;
     const ROOT_OF_UNITY: Self = ROOT_OF_UNITY;
     const ROOT_OF_UNITY_INV: Self = ROOT_OF_UNITY_INV;
