@@ -1,4 +1,4 @@
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use crate::{
     impl_add_binop_specify_output, impl_binops_additive, impl_binops_additive_specify_output,
@@ -15,7 +15,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 use rand_core::RngCore;
 
-/// This represents an element $c_0 + c_1 w$ of $\mathbb{F}_{p^12} = \mathbb{F}_{p^6}[w] / (w^2 - v)$.
+/// This represents an element $c_0 + c_1 w$ of $\mathbb{F}_{p^12} = \mathbb{F}_{p^6}\[w\] / (w^2 - v)$.
 pub struct Fp12 {
     pub c0: Fp6,
     pub c1: Fp6,

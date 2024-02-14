@@ -1,6 +1,6 @@
 //! Implementation of hash-to-field for Scalar values
 //!
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use super::HashToField;
 use crate::bls12_381::generic_array::{typenum::U48, GenericArray};

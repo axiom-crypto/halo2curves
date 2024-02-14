@@ -1,4 +1,4 @@
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use super::fp::*;
 use super::fp2::*;
@@ -14,7 +14,7 @@ use crate::{
     impl_binops_multiplicative, impl_binops_multiplicative_mixed, impl_sub_binop_specify_output,
 };
 
-/// This represents an element $c_0 + c_1 v + c_2 v^2$ of $\mathbb{F}_{p^6} = \mathbb{F}_{p^2}[v] / (v^3 - u - 1)$.
+/// This represents an element $c_0 + c_1 v + c_2 v^2$ of $\mathbb{F}_{p^6} = \mathbb{F}_{p^2}\[v\] / (v^3 - u - 1)$.
 pub struct Fp6 {
     pub c0: Fp2,
     pub c1: Fp2,

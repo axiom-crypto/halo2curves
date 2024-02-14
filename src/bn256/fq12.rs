@@ -6,7 +6,7 @@ use core::ops::{Add, Mul, Neg, Sub};
 use rand::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
-/// -GAMMA is a quadratic non-residue in Fp6. Fp12 = Fp6[X]/(X^2 + GAMMA)
+/// -GAMMA is a quadratic non-residue in Fp6. Fp12 = Fp6\[X\]/(X^2 + GAMMA)
 /// We introduce the variable w such that w^2 = -GAMMA
 // GAMMA = - v
 

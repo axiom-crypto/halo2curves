@@ -663,7 +663,7 @@ impl MultiMillerLoop for Pluto {
     }
 }
 
-/// Pluto pairing-friendly curve. See: https://github.com/daira/pluto-eris
+/// Pluto pairing-friendly curve. See: <https://github.com/daira/pluto-eris>
 #[derive(Clone, Debug)]
 pub struct Pluto;
 

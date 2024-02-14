@@ -1,5 +1,5 @@
 //! This module provides an implementation of the $\mathbb{G}_1$ group of BLS12-381.
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use core::borrow::Borrow;
 use core::fmt;
@@ -393,7 +393,7 @@ impl G1Affine {
     /// Attempts to deserialize a compressed element from big-endian bytes. See [`notes::serialization`](https://docs.rs/bls12_381/0.8.0/bls12_381/notes/serialization/index.html)
     /// for details about how group elements are serialized.
     ///
-    /// NOTE: this function used in [`CompressedEncoding::from_compressed`].
+    /// NOTE: this function used in `CompressedEncoding::from_compressed`.
     pub fn from_compressed_be(bytes: &[u8; 48]) -> CtOption<Self> {
         // We already know the point is on the curve because this is established
         // by the y-coordinate recovery procedure in from_compressed_unchecked().

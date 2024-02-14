@@ -2,7 +2,7 @@
 //! chain_pm3div4: input x, output x^((p-3)//4).
 //! chain_p2m9div16: input x, output x^((p**2 - 9) // 16).
 //!
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use core::ops::MulAssign;
 

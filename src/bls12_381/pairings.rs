@@ -1,4 +1,4 @@
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use super::fp::Fp;
 use super::fp12::Fp12;
@@ -491,7 +491,7 @@ impl Group for Gt {
 /// element as part of the pairing function (specifically, the Miller loop) and
 /// so should be computed whenever a $\mathbb{G}_2$ element is being used in
 /// multiple pairings or is otherwise known in advance. This should be used in
-/// conjunction with the [`multi_miller_loop`](crate::multi_miller_loop)
+/// conjunction with the [`multi_miller_loop`]
 /// function provided by this crate.
 pub struct G2Prepared {
     infinity: Choice,

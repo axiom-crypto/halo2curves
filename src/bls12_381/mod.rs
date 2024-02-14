@@ -7,7 +7,7 @@
 //! * This implementation targets Rust `1.36` or later.
 //! * This implementation does not require the Rust standard library.
 //! * All operations are constant time unless explicitly noted.
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 // Catch documentation errors caused by code changes.
 #![allow(clippy::too_many_arguments)]

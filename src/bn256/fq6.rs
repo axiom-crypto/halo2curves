@@ -5,7 +5,7 @@ use core::ops::{Add, Mul, Neg, Sub};
 use rand::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
-/// -BETA is a cubic non-residue in Fp2. Fp6 = Fp2[X]/(X^3 + BETA)
+/// -BETA is a cubic non-residue in Fp2. Fp6 = Fp2\[X\]/(X^3 + BETA)
 /// We introduce the variable v such that v^3 = -BETA
 // BETA = - (u + 9)
 

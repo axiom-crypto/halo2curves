@@ -1,7 +1,7 @@
 //! This module implements hash_to_curve, hash_to_field and related
 //! hashing primitives for use with BLS signatures.
 //!
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use core::ops::Add;
 

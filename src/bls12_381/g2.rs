@@ -1,5 +1,5 @@
 //! This module provides an implementation of the $\mathbb{G}_2$ group of BLS12-381.
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use core::borrow::Borrow;
 use core::fmt;

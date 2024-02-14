@@ -1,5 +1,5 @@
 //! This module implements arithmetic over the quadratic extension field Fp2.
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 #![allow(clippy::needless_borrow)]
 use core::fmt;
@@ -628,6 +628,7 @@ impl ff::PrimeField for Fp2 {
     const CAPACITY: u32 = 381 - 1;
     const MODULUS: &'static str =
         "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
+    #[doc(hidden)]
     const MULTIPLICATIVE_GENERATOR: Self = unimplemented!();
     const ROOT_OF_UNITY: Self = Self {
         c0: Fp::from_raw_unchecked([

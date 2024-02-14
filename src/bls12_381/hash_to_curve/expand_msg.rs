@@ -1,7 +1,7 @@
 //! This module implements message expansion consistent with the
 //! hash-to-curve RFC drafts 7 through 10
 //!
-//! Source: https://github.com/privacy-scaling-explorations/bls12_381
+//! Source: <https://github.com/privacy-scaling-explorations/bls12_381>
 
 use core::{
     fmt::{self, Debug, Formatter},
