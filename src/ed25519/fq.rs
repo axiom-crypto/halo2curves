@@ -8,7 +8,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 #[cfg(feature = "derive_serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::arithmetic::{adc, mac, macx, sbb};
+use crate::arithmetic::{adc, bigint_geq, mac, macx, sbb};
 
 /// This represents an element of $\mathbb{F}_q$ where
 ///
