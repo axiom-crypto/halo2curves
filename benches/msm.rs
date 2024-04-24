@@ -16,7 +16,7 @@ use criterion::{BenchmarkId, Criterion};
 use ff::Field;
 use group::prime::PrimeCurveAffine;
 use halo2curves::bn256::{Fr as Scalar, G1Affine as Point};
-use halo2curves::msm::{best_multiexp, multiexp_serial};
+use halo2curves::msm::{best_multiexp_independent_points, multiexp_serial};
 use rand_core::SeedableRng;
 use rand_xorshift::XorShiftRng;
 use rayon::current_thread_index;
@@ -88,23 +88,23 @@ fn msm(c: &mut Criterion) {
         .unwrap_or(&16);
     let (coeffs, bases) = generate_coefficients_and_curvepoints(max_k);
 
-    for k in SINGLECORE_RANGE {
-        group
-            .bench_function(BenchmarkId::new("singlecore", k), |b| {
-                assert!(k < 64);
-                let n: usize = 1 << k;
-                let mut acc = Point::identity().into();
-                b.iter(|| multiexp_serial(&coeffs[..n], &bases[..n], &mut acc));
-            })
-            .sample_size(10);
-    }
+    // for k in SINGLECORE_RANGE {
+    //     group
+    //         .bench_function(BenchmarkId::new("singlecore", k), |b| {
+    //             assert!(k < 64);
+    //             let n: usize = 1 << k;
+    //             let mut acc = Point::identity().into();
+    //             b.iter(|| multiexp_serial(&coeffs[..n], &bases[..n], &mut acc));
+    //         })
+    //         .sample_size(10);
+    // }
     for k in MULTICORE_RANGE {
         group
             .bench_function(BenchmarkId::new("multicore", k), |b| {
                 assert!(k < 64);
                 let n: usize = 1 << k;
                 b.iter(|| {
-                    best_multiexp(&coeffs[..n], &bases[..n]);
+                    best_multiexp_independent_points(&coeffs[..n], &bases[..n]);
                 })
             })
             .sample_size(SAMPLE_SIZE);
