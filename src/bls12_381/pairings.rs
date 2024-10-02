@@ -10,7 +10,7 @@ use core::borrow::Borrow;
 use core::fmt;
 use core::iter::Sum;
 use core::ops::{Add, AddAssign, Mul, Neg, Sub};
-use group::Group;
+use group::{Curve, Group};
 use pairing::{Engine, MultiMillerLoop, PairingCurveAffine};
 use rand_core::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
@@ -494,8 +494,9 @@ impl Group for Gt {
 /// conjunction with the [`multi_miller_loop`]
 /// function provided by this crate.
 pub struct G2Prepared {
-    infinity: Choice,
-    coeffs: Vec<(Fp2, Fp2, Fp2)>,
+    pub infinity: Choice,
+    pub coeffs: Vec<(Fp2, Fp2, Fp2)>,
+    pub affine: G2Affine,
 }
 
 impl From<G2Affine> for G2Prepared {
@@ -520,6 +521,10 @@ impl From<G2Affine> for G2Prepared {
             fn square_output(_: Self::Output) -> Self::Output {}
             fn conjugate(_: Self::Output) -> Self::Output {}
             fn one() -> Self::Output {}
+            fn debug(&self) -> Fp2 {
+                let aff = self.cur.to_affine();
+                aff.x
+            }
         }
 
         let is_identity = q.is_identity();
@@ -538,6 +543,7 @@ impl From<G2Affine> for G2Prepared {
         G2Prepared {
             infinity: is_identity,
             coeffs: adder.coeffs,
+            affine: q,
         }
     }
 }
@@ -545,6 +551,7 @@ impl From<G2Affine> for G2Prepared {
 /// Computes $$\sum_{i=1}^n \textbf{ML}(a_i, b_i)$$ given a series of terms
 /// $$(a_1, b_1), (a_2, b_2), ..., (a_n, b_n).$$
 pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> MillerLoopResult {
+    println!("multi_miller_loop start");
     struct Adder<'a, 'b, 'c> {
         terms: &'c [(&'a G1Affine, &'b G2Prepared)],
         index: usize,
@@ -560,6 +567,7 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> MillerLoopResult
 
                 let new_f = ell(f, &term.1.coeffs[index], term.0);
                 f = Fp12::conditional_select(&new_f, &f, either_identity);
+                // println!("({}) Q_acc_x: {:?}", index, f.c0.c1.c0);
             }
             self.index += 1;
 
@@ -586,10 +594,13 @@ pub fn multi_miller_loop(terms: &[(&G1Affine, &G2Prepared)]) -> MillerLoopResult
         fn one() -> Self::Output {
             Fp12::one()
         }
+        fn debug(&self) -> Fp2 {
+            Fp2::zero()
+        }
     }
 
     let mut adder = Adder { terms, index: 0 };
-
+    println!("run the miller_loop fn");
     let tmp = miller_loop(&mut adder);
 
     MillerLoopResult(tmp)
@@ -624,6 +635,10 @@ pub fn pairing(p: &G1Affine, q: &G2Affine) -> Gt {
         fn one() -> Self::Output {
             Fp12::one()
         }
+        fn debug(&self) -> Fp2 {
+            let aff = self.cur.to_affine();
+            aff.x
+        }
     }
 
     let either_identity = p.is_identity() | q.is_identity();
@@ -653,31 +668,52 @@ trait MillerLoopDriver {
     fn square_output(f: Self::Output) -> Self::Output;
     fn conjugate(f: Self::Output) -> Self::Output;
     fn one() -> Self::Output;
+    fn debug(&self) -> Fp2;
 }
 
 /// This is a "generic" implementation of the Miller loop to avoid duplicating code
 /// structure elsewhere; instead, we'll write concrete instantiations of
 /// `MillerLoopDriver` for whatever purposes we need (such as caching modes).
 fn miller_loop<D: MillerLoopDriver>(driver: &mut D) -> D::Output {
+    println!("h2c: start miller_loop");
     let mut f = D::one();
 
+    let mut total_double = 0;
+    let mut total_double_add = 0;
     let mut found_one = false;
-    for i in (0..64).rev().map(|b| (((BLS_X >> 1) >> b) & 1) == 1) {
+    for i in (0..64).rev() {
+        let bit_set = (((BLS_X >> 1) >> i) & 1) == 1;
+        let bit_set_binary = bit_set as u8;
+        let f_display = driver.debug();
+        if f_display != Fp2::zero() {
+            println!("h2c: i: {i} = {bit_set_binary} | f: {:?}", f_display);
+        }
         if !found_one {
-            found_one = i;
+            found_one = bit_set;
+            println!("----------------");
             continue;
         }
 
         f = driver.doubling_step(f);
+        let mut double_add = false;
 
-        if i {
+        if bit_set {
+            double_add = true;
             f = driver.addition_step(f);
+        }
+
+        if double_add {
+            total_double_add += 1;
+        } else {
+            total_double += 1;
         }
 
         f = D::square_output(f);
     }
 
     f = driver.doubling_step(f);
+    total_double += 1;
+    println!("h2c: total double: {total_double}, total double&add: {total_double_add}");
 
     if BLS_X_IS_NEGATIVE {
         f = D::conjugate(f);
@@ -700,6 +736,9 @@ fn ell(f: Fp12, coeffs: &(Fp2, Fp2, Fp2), p: &G1Affine) -> Fp12 {
 }
 
 fn doubling_step(r: &mut G2Projective) -> (Fp2, Fp2, Fp2) {
+    let r_affine = G2Affine::from(*r);
+    // println!("h2c: double: Q_acc_x: {:?}", r_affine.x);
+
     // Adaptation of Algorithm 26, https://eprint.iacr.org/2010/354.pdf
     let tmp0 = r.x.square();
     let tmp1 = r.y.square();

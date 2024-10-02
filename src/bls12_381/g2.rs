@@ -655,9 +655,9 @@ impl G2Affine {
 #[cfg_attr(docsrs, doc(cfg(feature = "groups")))]
 #[derive(Copy, Clone, Debug)]
 pub struct G2Projective {
-    pub(crate) x: Fp2,
-    pub(crate) y: Fp2,
-    pub(crate) z: Fp2,
+    pub x: Fp2,
+    pub y: Fp2,
+    pub z: Fp2,
 }
 
 impl Default for G2Projective {
