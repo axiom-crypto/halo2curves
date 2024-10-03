@@ -58,7 +58,7 @@ impl PairingCurveAffine for G2Affine {
 }
 
 #[derive(Copy, Clone, Debug, Default)]
-pub struct Gt(pub(crate) Fq12);
+pub struct Gt(pub Fq12);
 
 impl std::fmt::Display for Gt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
