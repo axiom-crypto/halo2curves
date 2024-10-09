@@ -26,7 +26,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 // integers in little-endian order. `Fq` values are always in
 // Montgomery form; i.e., Fq(a) = aR mod q, with R = 2^256.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Fq(pub(crate) [u64; 4]);
+pub struct Fq(pub [u64; 4]);
 
 #[cfg(feature = "derive_serde")]
 crate::serialize_deserialize_32_byte_primefield!(Fq);
