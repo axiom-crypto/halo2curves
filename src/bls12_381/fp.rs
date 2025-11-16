@@ -10,6 +10,9 @@ use ff::{Field, PrimeField, WithSmallOrderMulGroup};
 use rand_core::RngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
+#[cfg(all(feature = "asm", target_arch = "x86_64"))]
+mod assembly;
+
 use crate::arithmetic::{adc, mac, sbb};
 use crate::{
     impl_add_binop_specify_output, impl_binops_additive, impl_binops_additive_specify_output,
@@ -666,6 +669,7 @@ impl Fp {
         Fp([r0, r1, r2, r3, r4, r5])
     }
 
+    #[cfg(not(all(feature = "asm", target_arch = "x86_64")))]
     #[inline]
     /// Performs constant time addition of two elements.
     pub const fn add(&self, rhs: &Fp) -> Fp {
@@ -681,6 +685,13 @@ impl Fp {
         (Fp([d0, d1, d2, d3, d4, d5])).subtract_p()
     }
 
+    #[cfg(all(feature = "asm", target_arch = "x86_64"))]
+    #[inline]
+    pub fn add(&self, rhs: &Fp) -> Fp {
+        assembly::add(self, rhs)
+    }
+
+    #[cfg(not(all(feature = "asm", target_arch = "x86_64")))]
     #[inline]
     /// Performs constant time negation of an element.
     pub const fn neg(&self) -> Fp {
@@ -707,10 +718,23 @@ impl Fp {
         ])
     }
 
+    #[cfg(all(feature = "asm", target_arch = "x86_64"))]
+    #[inline]
+    pub fn neg(&self) -> Fp {
+        assembly::neg(self)
+    }
+
+    #[cfg(not(all(feature = "asm", target_arch = "x86_64")))]
     #[inline]
     /// Performs constant time subtraction of two elements.
     pub const fn sub(&self, rhs: &Fp) -> Fp {
         (&rhs.neg()).add(self)
+    }
+
+    #[cfg(all(feature = "asm", target_arch = "x86_64"))]
+    #[inline]
+    pub fn sub(&self, rhs: &Fp) -> Fp {
+        assembly::sub(self, rhs)
     }
 
     /// Returns `c = a.zip(b).fold(0, |acc, (a_i, b_i)| acc + a_i * b_i)`.
@@ -852,6 +876,7 @@ impl Fp {
         (&Fp([r6, r7, r8, r9, r10, r11])).subtract_p()
     }
 
+    #[cfg(not(all(feature = "asm", target_arch = "x86_64")))]
     #[inline]
     /// Performs constant time multiplication of two elements.
     pub const fn mul(&self, rhs: &Fp) -> Fp {
@@ -900,7 +925,14 @@ impl Fp {
         Self::montgomery_reduce(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
     }
 
+    #[cfg(all(feature = "asm", target_arch = "x86_64"))]
+    #[inline]
+    pub fn mul(&self, rhs: &Fp) -> Fp {
+        assembly::mul(self, rhs)
+    }
+
     /// Squares this element.
+    #[cfg(not(all(feature = "asm", target_arch = "x86_64")))]
     #[inline]
     pub const fn square(&self) -> Self {
         let (t1, carry) = mac(0, self.0[0], self.0[1], 0);
@@ -949,6 +981,12 @@ impl Fp {
         let (t11, _) = adc(t11, 0, carry);
 
         Self::montgomery_reduce(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
+    }
+
+    #[cfg(all(feature = "asm", target_arch = "x86_64"))]
+    #[inline]
+    pub fn square(&self) -> Self {
+        assembly::square(self)
     }
 }
 
