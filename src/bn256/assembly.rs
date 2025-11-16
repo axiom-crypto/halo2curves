@@ -56,7 +56,7 @@ macro_rules! field_arithmetic_asm {
                         out("r13") r1,
                         out("r14") r2,
                         out("r15") r3,
-                        options(pure, readonly, nostack)
+                        options(pure, readonly)
                     );
                 }
                 $field([r0, r1, r2, r3])
