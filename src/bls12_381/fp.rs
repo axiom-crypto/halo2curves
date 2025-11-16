@@ -20,6 +20,7 @@ use crate::{
 /// The internal representation of this type is six 64-bit unsigned
 /// integers in little-endian order. `Fp` values are always in
 /// Montgomery form; i.e., Scalar(a) = aR mod p, with R = 2^384.
+#[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Fp(pub(crate) [u64; 6]);
 
@@ -666,6 +667,7 @@ impl Fp {
         Fp([r0, r1, r2, r3, r4, r5])
     }
 
+    #[cfg(not(feature = "asm"))]
     #[inline]
     /// Performs constant time addition of two elements.
     pub const fn add(&self, rhs: &Fp) -> Fp {
@@ -681,6 +683,7 @@ impl Fp {
         (Fp([d0, d1, d2, d3, d4, d5])).subtract_p()
     }
 
+    #[cfg(not(feature = "asm"))]
     #[inline]
     /// Performs constant time negation of an element.
     pub const fn neg(&self) -> Fp {
@@ -707,6 +710,7 @@ impl Fp {
         ])
     }
 
+    #[cfg(not(feature = "asm"))]
     #[inline]
     /// Performs constant time subtraction of two elements.
     pub const fn sub(&self, rhs: &Fp) -> Fp {
@@ -852,6 +856,7 @@ impl Fp {
         (&Fp([r6, r7, r8, r9, r10, r11])).subtract_p()
     }
 
+    #[cfg(not(feature = "asm"))]
     #[inline]
     /// Performs constant time multiplication of two elements.
     pub const fn mul(&self, rhs: &Fp) -> Fp {
@@ -901,6 +906,7 @@ impl Fp {
     }
 
     /// Squares this element.
+    #[cfg(not(feature = "asm"))]
     #[inline]
     pub const fn square(&self) -> Self {
         let (t1, carry) = mac(0, self.0[0], self.0[1], 0);

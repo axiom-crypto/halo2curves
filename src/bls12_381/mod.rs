@@ -29,6 +29,8 @@ pub use scalar::Scalar as Fr;
 use scalar::Scalar;
 
 mod fp;
+#[cfg(all(feature = "asm", target_arch = "x86_64"))]
+mod assembly;
 mod fp2;
 mod g1;
 mod g2;
