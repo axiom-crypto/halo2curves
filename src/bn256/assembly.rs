@@ -193,7 +193,7 @@ macro_rules! field_arithmetic_asm {
                         out("r13") _,
                         out("r14") _,
                         out("r15") _,
-                        options(pure, readonly, nostack)
+                        options(pure, readonly)
                     )
                 }
                 $field([r0, r1, r2, r3])
@@ -431,7 +431,7 @@ macro_rules! field_arithmetic_asm {
                         out("r13") r1,
                         out("r14") r3,
                         out("r15") _,
-                        options(pure, readonly, nostack)
+                        options(pure, readonly)
                     )
                 }
 
@@ -492,7 +492,7 @@ macro_rules! field_arithmetic_asm {
                         out("r13") r1,
                         out("r14") r2,
                         out("r15") r3,
-                        options(pure, readonly, nostack)
+                        options(pure, readonly)
                     );
                 }
                 $field([r0, r1, r2, r3])
@@ -548,7 +548,7 @@ macro_rules! field_arithmetic_asm {
                         out("r13") r1,
                         out("r14") r2,
                         out("r15") r3,
-                        options(pure, readonly, nostack)
+                        options(pure, readonly)
                     );
                 }
                 $field([r0, r1, r2, r3])
@@ -602,7 +602,7 @@ macro_rules! field_arithmetic_asm {
                         out("r13") _,
                         out("r14") _,
                         out("r15") _,
-                        options(pure, readonly, nostack)
+                        options(pure, readonly)
                     )
                 }
                 $field([r0, r1, r2, r3])
