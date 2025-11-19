@@ -641,7 +641,7 @@ impl Fp {
 
         let blstrs_fp: BlstrsFp = BlstrsFp::from_bytes_le(&bytes).unwrap();
 
-        let inverted: BlstrsFp  = blstrs_fp.invert().unwrap();
+        let inverted: BlstrsFp = blstrs_fp.invert().unwrap();
         let inverted_bytes = inverted.to_bytes_le();
 
         Self::from_bytes(&inverted_bytes)
