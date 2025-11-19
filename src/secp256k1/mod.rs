@@ -1,8 +1,8 @@
+#[cfg(feature = "asm")]
+mod assembly;
 mod curve;
 mod fp;
 mod fq;
-#[cfg(feature = "asm")]
-mod assembly;
 
 pub use curve::*;
 pub use fp::*;
@@ -11,9 +11,9 @@ pub use fq::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ff::{Field, PrimeField};
     use group::GroupEncoding;
     use hex;
-    use ff::{Field, PrimeField};
     use pasta_curves::arithmetic::CurveExt;
     use rand_chacha::ChaChaRng;
     use rand_core::{RngCore, SeedableRng};
@@ -28,7 +28,7 @@ mod tests {
     const FQ_SEED_XOR: u64 = 0x0f0f_0f0f_0f0f_0f0f;
 
     #[test]
-    fn hash_to_curve_vectors() {
+    fn test_secp256k1_hash_to_curve_vectors() {
         const EXPECTED: [&str; 10] = [
             "0eb2b4b4381420fade419ca60d53aaee54f93f2f1d9aa308be7c1a31932532a040",
             "296922a9c8c53e6bee8df36ad54412abcc942629e5f5fd2ddf3df90440eeed9a00",
@@ -59,7 +59,7 @@ mod tests {
     }
 
     #[test]
-    fn fp_arithmetic_vectors() {
+    fn test_secp256k1_fp_arithmetic_vectors() {
         fn encode(fp: &Fp) -> String {
             hex::encode(fp.to_repr())
         }
@@ -220,7 +220,7 @@ mod tests {
     }
 
     #[test]
-    fn fq_arithmetic_vectors() {
+    fn test_secp256k1_fq_arithmetic_vectors() {
         fn encode(fq: &Fq) -> String {
             hex::encode(fq.to_repr())
         }
@@ -377,6 +377,209 @@ mod tests {
             };
             let inv = val.invert().unwrap();
             assert_eq!(encode(&inv), expected);
+        }
+    }
+
+    #[cfg(feature = "asm")]
+    fn montgomery_reduce_dense(r: [u64; 8], modulus: &[u64; 4], inv: u64) -> [u64; 4] {
+        use crate::arithmetic::{adc, mac, sbb};
+        let (mut r0, mut r1, mut r2, mut r3, mut r4, mut r5, mut r6, mut r7) =
+            (r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
+        let mut carry2 = 0u64;
+
+        let k = r0.wrapping_mul(inv);
+        let (_, mut carry) = mac(r0, k, modulus[0], 0);
+        (r1, carry) = mac(r1, k, modulus[1], carry);
+        (r2, carry) = mac(r2, k, modulus[2], carry);
+        (r3, carry) = mac(r3, k, modulus[3], carry);
+        (r4, carry2) = adc(r4, 0, carry);
+
+        let k = r1.wrapping_mul(inv);
+        let (_, mut carry) = mac(r1, k, modulus[0], 0);
+        (r2, carry) = mac(r2, k, modulus[1], carry);
+        (r3, carry) = mac(r3, k, modulus[2], carry);
+        (r4, carry) = mac(r4, k, modulus[3], carry);
+        (r5, carry2) = adc(r5, carry2, carry);
+
+        let k = r2.wrapping_mul(inv);
+        let (_, mut carry) = mac(r2, k, modulus[0], 0);
+        (r3, carry) = mac(r3, k, modulus[1], carry);
+        (r4, carry) = mac(r4, k, modulus[2], carry);
+        (r5, carry) = mac(r5, k, modulus[3], carry);
+        (r6, carry2) = adc(r6, carry2, carry);
+
+        let k = r3.wrapping_mul(inv);
+        let (_, mut carry) = mac(r3, k, modulus[0], 0);
+        (r4, carry) = mac(r4, k, modulus[1], carry);
+        (r5, carry) = mac(r5, k, modulus[2], carry);
+        (r6, carry) = mac(r6, k, modulus[3], carry);
+        (r7, carry2) = adc(r7, carry2, carry);
+
+        let (d0, borrow) = sbb(r4, modulus[0], 0);
+        let (d1, borrow) = sbb(r5, modulus[1], borrow);
+        let (d2, borrow) = sbb(r6, modulus[2], borrow);
+        let (d3, borrow) = sbb(r7, modulus[3], borrow);
+        let (_, borrow_flag) = sbb(carry2, 0, borrow);
+
+        let (d0, carry) = adc(d0, modulus[0] & borrow_flag, 0);
+        let (d1, carry) = adc(d1, modulus[1] & borrow_flag, carry);
+        let (d2, carry) = adc(d2, modulus[2] & borrow_flag, carry);
+        let (d3, _) = adc(d3, modulus[3] & borrow_flag, carry);
+
+        [d0, d1, d2, d3]
+    }
+
+    #[cfg(feature = "asm")]
+    fn reference_mul(a: &[u64; 4], b: &[u64; 4], modulus: &[u64; 4], inv: u64) -> [u64; 4] {
+        let product = crate::arithmetic::mul_512(*a, *b);
+        montgomery_reduce_dense(product, modulus, inv)
+    }
+
+    #[cfg(feature = "asm")]
+    fn reference_add_mod(a: &[u64; 4], b: &[u64; 4], modulus: &[u64; 4]) -> [u64; 4] {
+        use crate::arithmetic::{adc, sbb};
+        let (d0, carry0) = adc(a[0], b[0], 0);
+        let (d1, carry1) = adc(a[1], b[1], carry0);
+        let (d2, carry2) = adc(a[2], b[2], carry1);
+        let (d3, carry3) = adc(a[3], b[3], carry2);
+
+        let (d0_sub, borrow0) = sbb(d0, modulus[0], 0);
+        let (d1_sub, borrow1) = sbb(d1, modulus[1], borrow0);
+        let (d2_sub, borrow2) = sbb(d2, modulus[2], borrow1);
+        let (d3_sub, borrow3) = sbb(d3, modulus[3], borrow2);
+        let (_, borrow_mask) = sbb(carry3, 0, borrow3);
+
+        let (d0_full, carry) = adc(d0_sub, modulus[0] & borrow_mask, 0);
+        let (d1_full, carry) = adc(d1_sub, modulus[1] & borrow_mask, carry);
+        let (d2_full, carry) = adc(d2_sub, modulus[2] & borrow_mask, carry);
+        let (d3_full, _) = adc(d3_sub, modulus[3] & borrow_mask, carry);
+
+        [d0_full, d1_full, d2_full, d3_full]
+    }
+
+    #[cfg(feature = "asm")]
+    fn reference_sub_mod(a: &[u64; 4], b: &[u64; 4], modulus: &[u64; 4]) -> [u64; 4] {
+        use crate::arithmetic::{adc, sbb};
+        let (d0, borrow0) = sbb(a[0], b[0], 0);
+        let (d1, borrow1) = sbb(a[1], b[1], borrow0);
+        let (d2, borrow2) = sbb(a[2], b[2], borrow1);
+        let (d3, borrow3) = sbb(a[3], b[3], borrow2);
+
+        let mask = borrow3;
+        let (d0_full, carry) = adc(d0, modulus[0] & mask, 0);
+        let (d1_full, carry) = adc(d1, modulus[1] & mask, carry);
+        let (d2_full, carry) = adc(d2, modulus[2] & mask, carry);
+        let (d3_full, _) = adc(d3, modulus[3] & mask, carry);
+
+        [d0_full, d1_full, d2_full, d3_full]
+    }
+
+    #[cfg(feature = "asm")]
+    fn reference_double(a: &[u64; 4], modulus: &[u64; 4]) -> [u64; 4] {
+        reference_add_mod(a, a, modulus)
+    }
+
+    #[cfg(feature = "asm")]
+    fn reference_neg(a: &[u64; 4], modulus: &[u64; 4]) -> [u64; 4] {
+        use crate::arithmetic::sbb;
+        if a.iter().all(|&limb| limb == 0) {
+            return [0; 4];
+        }
+        let (d0, borrow0) = sbb(modulus[0], a[0], 0);
+        let (d1, borrow1) = sbb(modulus[1], a[1], borrow0);
+        let (d2, borrow2) = sbb(modulus[2], a[2], borrow1);
+        let (d3, _) = sbb(modulus[3], a[3], borrow2);
+        [d0, d1, d2, d3]
+    }
+
+    #[cfg(feature = "asm")]
+    #[test]
+    fn test_secp256k1_fp_basic_ops_match_reference() {
+        use crate::arithmetic::mul_512;
+        const MODULUS: [u64; 4] = [
+            0xfffffffefffffc2f,
+            0xffffffffffffffff,
+            0xffffffffffffffff,
+            0xffffffffffffffff,
+        ];
+        const INV: u64 = 0xd838091dd2253531;
+        let mut rng = ChaChaRng::seed_from_u64(0xabadcafe0011);
+        for _ in 0..128 {
+            let a = Fp::random(&mut rng);
+            let b = Fp::random(&mut rng);
+            assert_eq!((a + b).0, reference_add_mod(&a.0, &b.0, &MODULUS));
+            assert_eq!((a - b).0, reference_sub_mod(&a.0, &b.0, &MODULUS));
+            assert_eq!(a.double().0, reference_double(&a.0, &MODULUS));
+            assert_eq!((-a).0, reference_neg(&a.0, &MODULUS));
+            let product = mul_512(a.0, b.0);
+            let expected_square = montgomery_reduce_dense(mul_512(a.0, a.0), &MODULUS, INV);
+            assert_eq!(a.square().0, expected_square);
+            let expected_mul = montgomery_reduce_dense(product, &MODULUS, INV);
+            assert_eq!(a.mul(&b).0, expected_mul);
+        }
+    }
+
+    #[cfg(feature = "asm")]
+    #[test]
+    fn test_secp256k1_fq_basic_ops_match_reference() {
+        use crate::arithmetic::mul_512;
+        const MODULUS: [u64; 4] = [
+            0xbfd25e8cd0364141,
+            0xbaaedce6af48a03b,
+            0xfffffffffffffffe,
+            0xffffffffffffffff,
+        ];
+        const INV: u64 = 0x4b0dff665588b13f;
+        let mut rng = ChaChaRng::seed_from_u64(0xfacefeed7788);
+        for _ in 0..128 {
+            let a = Fq::random(&mut rng);
+            let b = Fq::random(&mut rng);
+            assert_eq!((a + b).0, reference_add_mod(&a.0, &b.0, &MODULUS));
+            assert_eq!((a - b).0, reference_sub_mod(&a.0, &b.0, &MODULUS));
+            assert_eq!(a.double().0, reference_double(&a.0, &MODULUS));
+            assert_eq!((-a).0, reference_neg(&a.0, &MODULUS));
+            let expected_square = montgomery_reduce_dense(mul_512(a.0, a.0), &MODULUS, INV);
+            assert_eq!(a.square().0, expected_square);
+            let expected_mul = montgomery_reduce_dense(mul_512(a.0, b.0), &MODULUS, INV);
+            assert_eq!(a.mul(&b).0, expected_mul);
+        }
+    }
+
+    #[cfg(feature = "asm")]
+    #[test]
+    fn test_secp256k1_fp_mul_matches_reference() {
+        const MODULUS: [u64; 4] = [
+            0xfffffffefffffc2f,
+            0xffffffffffffffff,
+            0xffffffffffffffff,
+            0xffffffffffffffff,
+        ];
+        const INV: u64 = 0xd838091dd2253531;
+        let mut rng = ChaChaRng::seed_from_u64(0xabad1dea12345678);
+        for _ in 0..128 {
+            let a = Fp::random(&mut rng);
+            let b = Fp::random(&mut rng);
+            let expected = Fp(reference_mul(&a.0, &b.0, &MODULUS, INV));
+            assert_eq!(a.mul(&b), expected);
+        }
+    }
+
+    #[cfg(feature = "asm")]
+    #[test]
+    fn test_secp256k1_fq_mul_matches_reference() {
+        const MODULUS: [u64; 4] = [
+            0xbfd25e8cd0364141,
+            0xbaaedce6af48a03b,
+            0xfffffffffffffffe,
+            0xffffffffffffffff,
+        ];
+        const INV: u64 = 0x4b0dff665588b13f;
+        let mut rng = ChaChaRng::seed_from_u64(0xfeedcafe42);
+        for _ in 0..128 {
+            let a = Fq::random(&mut rng);
+            let b = Fq::random(&mut rng);
+            let expected = Fq(reference_mul(&a.0, &b.0, &MODULUS, INV));
+            assert_eq!(a.mul(&b), expected);
         }
     }
 }
