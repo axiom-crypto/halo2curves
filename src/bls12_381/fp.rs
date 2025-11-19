@@ -632,17 +632,19 @@ impl Fp {
     /// element, returning None in the case that this element
     /// is zero.
     pub fn invert(&self) -> CtOption<Self> {
-        // Exponentiate by p - 2
-        let t = self.pow_vartime(&[
-            0xb9fe_ffff_ffff_aaa9,
-            0x1eab_fffe_b153_ffff,
-            0x6730_d2a0_f6b0_f624,
-            0x6477_4b84_f385_12bf,
-            0x4b1b_a7b6_434b_acd7,
-            0x1a01_11ea_397f_e69a,
-        ]);
+        use blstrs::Fp as BlstrsFp;
 
-        CtOption::new(t, !self.is_zero())
+        let bytes = self.to_bytes();
+        if bool::from(self.is_zero()) {
+            return CtOption::new(Fp::zero(), !self.is_zero());
+        }
+
+        let blstrs_fp: BlstrsFp = BlstrsFp::from_bytes_le(&bytes).unwrap();
+
+        let inverted: BlstrsFp  = blstrs_fp.invert().unwrap();
+        let inverted_bytes = inverted.to_bytes_le();
+
+        Self::from_bytes(&inverted_bytes)
     }
 
     #[inline]

@@ -52,6 +52,7 @@ rayon = "1.8"
 digest = "0.10.7"
 sha2 = "0.10.8"
 unroll = "0.1.5"
+blstrs = {version = "0.7", features = ["__private_bench"] } 
 
 [features]
 default = ["bits", "bn256-table", "derive_serde"]
