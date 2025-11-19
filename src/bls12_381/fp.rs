@@ -20,6 +20,7 @@ use crate::{
 /// The internal representation of this type is six 64-bit unsigned
 /// integers in little-endian order. `Fp` values are always in
 /// Montgomery form; i.e., Scalar(a) = aR mod p, with R = 2^384.
+#[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Fp(pub(crate) [u64; 6]);
 
@@ -627,24 +628,35 @@ impl Fp {
         CtOption::new(sqrt, sqrt.square().ct_eq(self))
     }
 
+    #[inline(always)]
+    unsafe fn as_blstrs(&self) -> &blstrs::Fp {
+        // SAFETY: Fp and BlstrsFp are both transparent wrappers around the same
+        // 6×u64 limb representation on 64-bit little-endian targets.
+        &*(self as *const Fp as *const blstrs::Fp)
+    }
+
+    #[inline(always)]
+    unsafe fn as_blstrs_mut(&mut self) -> &mut blstrs::Fp {
+        &mut *(self as *mut Fp as *mut blstrs::Fp)
+    }
+
+    #[inline(always)]
+    unsafe fn from_blstrs(blstrs: blstrs::Fp) -> Self {
+        // Moves the value without copying by reinterpreting its bits.
+        std::mem::transmute::<blstrs::Fp, Fp>(blstrs)
+    }
+
     #[inline]
     /// Computes the multiplicative inverse of this field
     /// element, returning None in the case that this element
     /// is zero.
     pub fn invert(&self) -> CtOption<Self> {
-        use blstrs::Fp as BlstrsFp;
-
-        let bytes = self.to_bytes();
         if bool::from(self.is_zero()) {
             return CtOption::new(Fp::zero(), !self.is_zero());
         }
 
-        let blstrs_fp: BlstrsFp = BlstrsFp::from_bytes_le(&bytes).unwrap();
-
-        let inverted: BlstrsFp = blstrs_fp.invert().unwrap();
-        let inverted_bytes = inverted.to_bytes_le();
-
-        Self::from_bytes(&inverted_bytes)
+        let inverted = unsafe { self.as_blstrs().invert().unwrap() };
+        CtOption::new(unsafe { Fp::from_blstrs(inverted) }, Choice::from(1))
     }
 
     #[inline]
