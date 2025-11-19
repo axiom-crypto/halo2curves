@@ -516,7 +516,6 @@ mod tests {
             assert_eq!(a.square().0, expected_square);
             let expected_mul = montgomery_reduce_dense(product, &MODULUS, INV);
             assert_eq!(a.mul(&b).0, expected_mul);
-            assert_eq!(0, 1);
         }
     }
 
