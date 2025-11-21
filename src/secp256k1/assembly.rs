@@ -382,7 +382,7 @@ macro_rules! field_arithmetic_asm {
                         r_ptr = in(reg) r.as_ptr(),
                         m_ptr = in(reg) $modulus.0.as_ptr(),
                         inv = sym $inv,
-
+ 
                         out("rax") _,
                         out("rdi") _,
                         out("rcx") _,
