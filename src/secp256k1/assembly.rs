@@ -215,81 +215,311 @@ macro_rules! field_arithmetic_asm {
                 $field([r0, r1, r2, r3])
             }
             #[inline(always)]
-            fn montgomery_reduce(r: &[u64; 8]) -> $field {
-                let k = r[0].wrapping_mul($inv);
-                let (_, carry) = crate::arithmetic::mac(r[0], k, $modulus.0[0], 0);
-                let (r1, carry) = crate::arithmetic::mac(r[1], k, $modulus.0[1], carry);
-                let (r2, carry) = crate::arithmetic::mac(r[2], k, $modulus.0[2], carry);
-                let (r3, carry) = crate::arithmetic::mac(r[3], k, $modulus.0[3], carry);
-                let (r4, mut carry2) = crate::arithmetic::adc(r[4], 0, carry);
+            pub(crate) fn montgomery_reduce(r: &[u64; 8]) -> $field {
+                let mut r0: u64;
+                let mut r1: u64;
+                let mut r2: u64;
+                let mut r3: u64;
 
-                let k = r1.wrapping_mul($inv);
-                let (_, carry) = crate::arithmetic::mac(r1, k, $modulus.0[0], 0);
-                let (r2, carry) = crate::arithmetic::mac(r2, k, $modulus.0[1], carry);
-                let (r3, carry) = crate::arithmetic::mac(r3, k, $modulus.0[2], carry);
-                let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[3], carry);
-                let (r5, carry2_tmp) = crate::arithmetic::adc(r[5], carry2, carry);
-                carry2 = carry2_tmp;
+                unsafe {
+                    asm!(
+                        // load 512-bit input
+                        "mov r8,  qword ptr [{r_ptr} + 0]",
+                        "mov r9,  qword ptr [{r_ptr} + 8]",
+                        "mov r10, qword ptr [{r_ptr} + 16]",
+                        "mov r11, qword ptr [{r_ptr} + 24]",
+                        "mov r12, qword ptr [{r_ptr} + 32]",
+                        "mov r13, qword ptr [{r_ptr} + 40]",
+                        "mov r14, qword ptr [{r_ptr} + 48]",
+                        "mov r15, qword ptr [{r_ptr} + 56]",
+                        "xor rdi, rdi", // carry2 = 0
 
-                let k = r2.wrapping_mul($inv);
-                let (_, carry) = crate::arithmetic::mac(r2, k, $modulus.0[0], 0);
-                let (r3, carry) = crate::arithmetic::mac(r3, k, $modulus.0[1], carry);
-                let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[2], carry);
-                let (r5, carry) = crate::arithmetic::mac(r5, k, $modulus.0[3], carry);
-                let (r6, carry2_tmp) = crate::arithmetic::adc(r[6], carry2, carry);
-                carry2 = carry2_tmp;
+                        // i0
+                        "mov rdx, r8",
+                        "mulx rax, rcx, qword ptr [{inv}]",
+                        "mov rdx, rcx",
 
-                let k = r3.wrapping_mul($inv);
-                let (_, carry) = crate::arithmetic::mac(r3, k, $modulus.0[0], 0);
-                let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[1], carry);
-                let (r5, carry) = crate::arithmetic::mac(r5, k, $modulus.0[2], carry);
-                let (r6, carry) = crate::arithmetic::mac(r6, k, $modulus.0[3], carry);
-                let (r7, carry2) = crate::arithmetic::adc(r[7], carry2, carry);
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 0]",
+                        "add r8, rcx",
+                        "adc rax, 0",
+                        "mov rsi, rax",
 
-                let (d0, borrow) = crate::arithmetic::sbb(r4, $modulus.0[0], 0);
-                let (d1, borrow) = crate::arithmetic::sbb(r5, $modulus.0[1], borrow);
-                let (d2, borrow) = crate::arithmetic::sbb(r6, $modulus.0[2], borrow);
-                let (d3, borrow) = crate::arithmetic::sbb(r7, $modulus.0[3], borrow);
-                let (_, borrow) = crate::arithmetic::sbb(carry2, 0, borrow);
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 8]",
+                        "add r9, rcx",
+                        "adc r9, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
 
-                let (d0, carry) =
-                    crate::arithmetic::adc(d0, $modulus.0[0] & borrow, 0);
-                let (d1, carry) =
-                    crate::arithmetic::adc(d1, $modulus.0[1] & borrow, carry);
-                let (d2, carry) =
-                    crate::arithmetic::adc(d2, $modulus.0[2] & borrow, carry);
-                let (d3, _) = crate::arithmetic::adc(d3, $modulus.0[3] & borrow, carry);
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 16]",
+                        "add r10, rcx",
+                        "adc r10, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
 
-                $field([d0, d1, d2, d3])
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 24]",
+                        "add r11, rcx",
+                        "adc r11, rsi",
+                        "adc rax, 0",
+
+                        "add r12, rdi",
+                        "adc r12, rax",
+                        "mov rdi, 0",
+                        "adc rdi, 0",
+
+                        // i1
+                        "mov rdx, r9",
+                        "mulx rax, rcx, qword ptr [{inv}]",
+                        "mov rdx, rcx",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 0]",
+                        "add r9, rcx",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 8]",
+                        "add r10, rcx",
+                        "adc r10, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 16]",
+                        "add r11, rcx",
+                        "adc r11, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 24]",
+                        "add r12, rcx",
+                        "adc r12, rsi",
+                        "adc rax, 0",
+
+                        "add r13, rdi",
+                        "adc r13, rax",
+                        "mov rdi, 0",
+                        "adc rdi, 0",
+
+                        // i2
+                        "mov rdx, r10",
+                        "mulx rax, rcx, qword ptr [{inv}]",
+                        "mov rdx, rcx",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 0]",
+                        "add r10, rcx",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 8]",
+                        "add r11, rcx",
+                        "adc r11, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 16]",
+                        "add r12, rcx",
+                        "adc r12, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 24]",
+                        "add r13, rcx",
+                        "adc r13, rsi",
+                        "adc rax, 0",
+
+                        "add r14, rdi",
+                        "adc r14, rax",
+                        "mov rdi, 0",
+                        "adc rdi, 0",
+
+                        // i3
+                        "mov rdx, r11",
+                        "mulx rax, rcx, qword ptr [{inv}]",
+                        "mov rdx, rcx",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 0]",
+                        "add r11, rcx",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 8]",
+                        "add r12, rcx",
+                        "adc r12, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 16]",
+                        "add r13, rcx",
+                        "adc r13, rsi",
+                        "adc rax, 0",
+                        "mov rsi, rax",
+
+                        "mulx rax, rcx, qword ptr [{m_ptr} + 24]",
+                        "add r14, rcx",
+                        "adc r14, rsi",
+                        "adc rax, 0",
+
+                        "add r15, rdi",
+                        "adc r15, rax",
+                        "mov rdi, 0",
+                        "adc rdi, 0",
+
+                        // conditional subtraction: if (r15..r12, carry2) >= modulus keep subtraction
+                        "mov r8, r12",
+                        "mov r9, r13",
+                        "mov r10, r14",
+                        "mov r11, r15",
+
+                        "sub r8, qword ptr [{m_ptr} + 0]",
+                        "sbb r9, qword ptr [{m_ptr} + 8]",
+                        "sbb r10, qword ptr [{m_ptr} + 16]",
+                        "sbb r11, qword ptr [{m_ptr} + 24]",
+                        "sbb rdi, 0",
+
+                        "cmovc r8, r12",
+                        "cmovc r9, r13",
+                        "cmovc r10, r14",
+                        "cmovc r11, r15",
+
+                        r_ptr = in(reg) r.as_ptr(),
+                        m_ptr = in(reg) $modulus.0.as_ptr(),
+                        inv = sym $inv,
+
+                        out("rax") _,
+                        out("rdi") _,
+                        out("rcx") _,
+                        out("rdx") _,
+                        out("rsi") _,
+                        out("r8") r0,
+                        out("r9") r1,
+                        out("r10") r2,
+                        out("r11") r3,
+                        out("r12") _,
+                        out("r13") _,
+                        out("r14") _,
+                        out("r15") _,
+                        options(pure, readonly)
+                    );
+                }
+
+                $field([r0, r1, r2, r3])
             }
 
             /// Multiplies `rhs` by `self`, returning the result.
             #[inline]
             pub fn mul(&self, rhs: &Self) -> $field {
-                // Dense moduli can't rely on the no-carry CIOS variant. Use the same
-                // schoolbook multiplication that the dense field backend uses, and
-                // feed the product into Montgomery reduction.
-                let (r0, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[0], 0);
-                let (r1, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[1], carry);
-                let (r2, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[2], carry);
-                let (r3, r4) = crate::arithmetic::mac(0, self.0[0], rhs.0[3], carry);
+                let mut tmp = [0u64; 8];
+                unsafe {
+                    asm!(
+                        // load operands
+                        "mov r8,  qword ptr [{a_ptr} + 0]",
+                        "mov r9,  qword ptr [{a_ptr} + 8]",
+                        "mov r10, qword ptr [{a_ptr} + 16]",
+                        "mov r11, qword ptr [{a_ptr} + 24]",
 
-                let (r1, carry) = crate::arithmetic::mac(r1, self.0[1], rhs.0[0], 0);
-                let (r2, carry) = crate::arithmetic::mac(r2, self.0[1], rhs.0[1], carry);
-                let (r3, carry) = crate::arithmetic::mac(r3, self.0[1], rhs.0[2], carry);
-                let (r4, r5) = crate::arithmetic::mac(r4, self.0[1], rhs.0[3], carry);
+                        // row 0 (a0 * b)
+                        "mov rax, r8",
+                        "mul qword ptr [{b_ptr} + 0]",
+                        "add qword ptr [{tmp_ptr} + 0], rax",
+                        "adc qword ptr [{tmp_ptr} + 8], rdx",
 
-                let (r2, carry) = crate::arithmetic::mac(r2, self.0[2], rhs.0[0], 0);
-                let (r3, carry) = crate::arithmetic::mac(r3, self.0[2], rhs.0[1], carry);
-                let (r4, carry) = crate::arithmetic::mac(r4, self.0[2], rhs.0[2], carry);
-                let (r5, r6) = crate::arithmetic::mac(r5, self.0[2], rhs.0[3], carry);
+                        "mov rax, r8",
+                        "mul qword ptr [{b_ptr} + 8]",
+                        "adc qword ptr [{tmp_ptr} + 8], rax",
+                        "adc qword ptr [{tmp_ptr} + 16], rdx",
 
-                let (r3, carry) = crate::arithmetic::mac(r3, self.0[3], rhs.0[0], 0);
-                let (r4, carry) = crate::arithmetic::mac(r4, self.0[3], rhs.0[1], carry);
-                let (r5, carry) = crate::arithmetic::mac(r5, self.0[3], rhs.0[2], carry);
-                let (r6, r7) = crate::arithmetic::mac(r6, self.0[3], rhs.0[3], carry);
+                        "mov rax, r8",
+                        "mul qword ptr [{b_ptr} + 16]",
+                        "adc qword ptr [{tmp_ptr} + 16], rax",
+                        "adc qword ptr [{tmp_ptr} + 24], rdx",
 
-                Self::montgomery_reduce(&[r0, r1, r2, r3, r4, r5, r6, r7])
+                        "mov rax, r8",
+                        "mul qword ptr [{b_ptr} + 24]",
+                        "adc qword ptr [{tmp_ptr} + 24], rax",
+                        "adc qword ptr [{tmp_ptr} + 32], rdx",
+                        "adc qword ptr [{tmp_ptr} + 40], 0",
+
+                        // row 1 (a1 * b)
+                        "clc",
+                        "mov rax, r9",
+                        "mul qword ptr [{b_ptr} + 0]",
+                        "add qword ptr [{tmp_ptr} + 8], rax",
+                        "adc qword ptr [{tmp_ptr} + 16], rdx",
+
+                        "mov rax, r9",
+                        "mul qword ptr [{b_ptr} + 8]",
+                        "adc qword ptr [{tmp_ptr} + 16], rax",
+                        "adc qword ptr [{tmp_ptr} + 24], rdx",
+
+                        "mov rax, r9",
+                        "mul qword ptr [{b_ptr} + 16]",
+                        "adc qword ptr [{tmp_ptr} + 24], rax",
+                        "adc qword ptr [{tmp_ptr} + 32], rdx",
+
+                        "mov rax, r9",
+                        "mul qword ptr [{b_ptr} + 24]",
+                        "adc qword ptr [{tmp_ptr} + 32], rax",
+                        "adc qword ptr [{tmp_ptr} + 40], rdx",
+                        "adc qword ptr [{tmp_ptr} + 48], 0",
+
+                        // row 2 (a2 * b)
+                        "clc",
+                        "mov rax, r10",
+                        "mul qword ptr [{b_ptr} + 0]",
+                        "add qword ptr [{tmp_ptr} + 16], rax",
+                        "adc qword ptr [{tmp_ptr} + 24], rdx",
+
+                        "mov rax, r10",
+                        "mul qword ptr [{b_ptr} + 8]",
+                        "adc qword ptr [{tmp_ptr} + 24], rax",
+                        "adc qword ptr [{tmp_ptr} + 32], rdx",
+
+                        "mov rax, r10",
+                        "mul qword ptr [{b_ptr} + 16]",
+                        "adc qword ptr [{tmp_ptr} + 32], rax",
+                        "adc qword ptr [{tmp_ptr} + 40], rdx",
+
+                        "mov rax, r10",
+                        "mul qword ptr [{b_ptr} + 24]",
+                        "adc qword ptr [{tmp_ptr} + 40], rax",
+                        "adc qword ptr [{tmp_ptr} + 48], rdx",
+                        "adc qword ptr [{tmp_ptr} + 56], 0",
+
+                        // row 3 (a3 * b)
+                        "clc",
+                        "mov rax, r11",
+                        "mul qword ptr [{b_ptr} + 0]",
+                        "add qword ptr [{tmp_ptr} + 24], rax",
+                        "adc qword ptr [{tmp_ptr} + 32], rdx",
+
+                        "mov rax, r11",
+                        "mul qword ptr [{b_ptr} + 8]",
+                        "adc qword ptr [{tmp_ptr} + 32], rax",
+                        "adc qword ptr [{tmp_ptr} + 40], rdx",
+
+                        "mov rax, r11",
+                        "mul qword ptr [{b_ptr} + 16]",
+                        "adc qword ptr [{tmp_ptr} + 40], rax",
+                        "adc qword ptr [{tmp_ptr} + 48], rdx",
+
+                        "mov rax, r11",
+                        "mul qword ptr [{b_ptr} + 24]",
+                        "adc qword ptr [{tmp_ptr} + 48], rax",
+                        "adc qword ptr [{tmp_ptr} + 56], rdx",
+                        "adc rax, 0",
+
+                        a_ptr = in(reg) self.0.as_ptr(),
+                        b_ptr = in(reg) rhs.0.as_ptr(),
+                        tmp_ptr = in(reg) tmp.as_mut_ptr(),
+                        out("rax") _,
+                        out("rdx") _,
+                        out("r8") _,
+                        out("r9") _,
+                        out("r10") _,
+                        out("r11") _,
+                        options()
+                    );
+                }
+
+                Self::montgomery_reduce(&tmp)
             }
 
 

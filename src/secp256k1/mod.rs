@@ -17,6 +17,7 @@ mod tests {
     use pasta_curves::arithmetic::CurveExt;
     use rand_chacha::ChaChaRng;
     use rand_core::{RngCore, SeedableRng};
+    use subtle::ConditionallySelectable;
 
     const VECTORS_PER_OP: usize = 16;
     const FP_ADD_SEED: u64 = 0xaddf_00dd_eadc_0ded;
@@ -27,6 +28,45 @@ mod tests {
     const FP_INVERT_SEED: u64 = 0x1ee1_dead_beef_cafe;
     const FQ_SEED_XOR: u64 = 0x0f0f_0f0f_0f0f_0f0f;
 
+
+    #[test]
+    fn test_secp256k1_misc() {
+        fn log_fp(label: &str, value: &Fp) {
+            println!("{label}: {}", hex::encode(value.to_repr()));
+        }
+
+        println!("step start");
+        let z = Fp::ONE;
+        println!("step z");
+        let a = Secp256k1::a();
+        println!("step a");
+        let b = Secp256k1::b();
+        println!("step b");
+        let one = Fp::ONE;
+        println!("step one");
+        let three = one + one + one;
+        println!("step three");
+        let four = three + one;
+        println!("step four");
+        let z_sq = z.square();
+        println!("step z_sq");
+        let tmp = three * z_sq + four * a;
+        println!("step tmp");
+
+        println!("--- svdw_precomputed_constants debug ---");
+        log_fp("z", &z);
+        log_fp("a", &a);
+        log_fp("b", &b);
+        log_fp("neg one", &(-one));
+        log_fp("neg one * neg one", &(-one * -one));
+        log_fp("one * neg one", &(&one * &-one));
+        log_fp("neg one * one", &(&-one * &one));
+        log_fp("one * one", &(&one * &one));
+        assert_eq!((-one * -one), one);
+        assert_eq!((-one * one), -one);
+        assert_eq!((one * -one), -one);
+        assert_eq!((one * one), one);
+    }
     #[test]
     fn test_secp256k1_hash_to_curve_vectors() {
         const EXPECTED: [&str; 10] = [
