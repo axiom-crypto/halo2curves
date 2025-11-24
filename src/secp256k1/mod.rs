@@ -26,7 +26,9 @@ mod tests {
     const FP_DOUBLE_SEED: u64 = 0x00d0_00d0_00d0_00d0;
     const FP_SQUARE_SEED: u64 = 0x5a5a_5a5a_1234_5678;
     const FP_INVERT_SEED: u64 = 0x1ee1_dead_beef_cafe;
+    const FP_REDUCE_SEED: u64 = 0xdec0_de01_feed_baad;
     const FQ_SEED_XOR: u64 = 0x0f0f_0f0f_0f0f_0f0f;
+    const FQ_REDUCE_SEED: u64 = 0xcafe_f00d_dead_f00d;
 
 
     #[test]
@@ -470,6 +472,49 @@ mod tests {
     }
 
     #[cfg(feature = "asm")]
+    fn reference_montgomery_reduce_short(r: [u64; 4], modulus: &[u64; 4], inv: u64) -> [u64; 4] {
+        use crate::arithmetic::{adc, mac, macx, sbb};
+        let (mut r0, mut r1, mut r2, mut r3) = (r[0], r[1], r[2], r[3]);
+
+        let k0 = r0.wrapping_mul(inv);
+        let (_, mut carry) = macx(r0, k0, modulus[0]);
+        (r1, carry) = mac(r1, k0, modulus[1], carry);
+        (r2, carry) = mac(r2, k0, modulus[2], carry);
+        (r3, carry) = mac(r3, k0, modulus[3], carry);
+
+        let k1 = r1.wrapping_mul(inv);
+        let (_, mut carry) = macx(r1, k1, modulus[0]);
+        (r2, carry) = mac(r2, k1, modulus[1], carry);
+        (r3, carry) = mac(r3, k1, modulus[2], carry);
+        (r0, carry) = mac(r0, k1, modulus[3], carry);
+
+        let k2 = r2.wrapping_mul(inv);
+        let (_, mut carry) = macx(r2, k2, modulus[0]);
+        (r3, carry) = mac(r3, k2, modulus[1], carry);
+        (r0, carry) = mac(r0, k2, modulus[2], carry);
+        (r1, carry) = mac(r1, k2, modulus[3], carry);
+
+        let k3 = r3.wrapping_mul(inv);
+        let (_, mut carry) = macx(r3, k3, modulus[0]);
+        (r0, carry) = mac(r0, k3, modulus[1], carry);
+        (r1, carry) = mac(r1, k3, modulus[2], carry);
+        (r2, carry) = mac(r2, k3, modulus[3], carry);
+
+        let (d0, borrow) = sbb(r0, modulus[0], 0);
+        let (d1, borrow) = sbb(r1, modulus[1], borrow);
+        let (d2, borrow) = sbb(r2, modulus[2], borrow);
+        let (d3, borrow) = sbb(r3, modulus[3], borrow);
+        let (_, borrow_flag) = sbb(carry, 0, borrow);
+
+        let (d0, carry) = adc(d0, modulus[0] & borrow_flag, 0);
+        let (d1, carry) = adc(d1, modulus[1] & borrow_flag, carry);
+        let (d2, carry) = adc(d2, modulus[2] & borrow_flag, carry);
+        let (d3, _) = adc(d3, modulus[3] & borrow_flag, carry);
+
+        [d0, d1, d2, d3]
+    }
+
+    #[cfg(feature = "asm")]
     fn reference_mul(a: &[u64; 4], b: &[u64; 4], modulus: &[u64; 4], inv: u64) -> [u64; 4] {
         let product = crate::arithmetic::mul_512(*a, *b);
         montgomery_reduce_dense(product, modulus, inv)
@@ -604,6 +649,7 @@ mod tests {
         }
     }
 
+
     #[cfg(feature = "asm")]
     #[test]
     fn test_secp256k1_fq_mul_matches_reference() {
@@ -620,6 +666,82 @@ mod tests {
             let b = Fq::random(&mut rng);
             let expected = Fq(reference_mul(&a.0, &b.0, &MODULUS, INV));
             assert_eq!(a.mul(&b), expected);
+        }
+    }
+
+    #[cfg(feature = "asm")]
+    #[test]
+    fn test_secp256k1_fp_montgomery_reduce_256_matches_reference() {
+        const MODULUS: [u64; 4] = [
+            0xfffffffefffffc2f,
+            0xffffffffffffffff,
+            0xffffffffffffffff,
+            0xffffffffffffffff,
+        ];
+        const INV: u64 = 0xd838091dd2253531;
+        let mut rng = ChaChaRng::seed_from_u64(FP_REDUCE_SEED);
+
+        let deterministic = [
+            [0u64; 4],
+            MODULUS,
+            [0x1, 0x0, 0x0, 0x0],
+            [u64::MAX; 4],
+        ];
+
+        for limbs in deterministic {
+            let expected = reference_montgomery_reduce_short(limbs, &MODULUS, INV);
+            let actual = Fp(limbs).montgomery_reduce_256().0;
+            assert_eq!(actual, expected);
+        }
+
+        for _ in 0..128 {
+            let limbs = [
+                rng.next_u64(),
+                rng.next_u64(),
+                rng.next_u64(),
+                rng.next_u64(),
+            ];
+            let expected = reference_montgomery_reduce_short(limbs, &MODULUS, INV);
+            let actual = Fp(limbs).montgomery_reduce_256().0;
+            assert_eq!(actual, expected);
+        }
+    }
+
+    #[cfg(feature = "asm")]
+    #[test]
+    fn test_secp256k1_fq_montgomery_reduce_256_matches_reference() {
+        const MODULUS: [u64; 4] = [
+            0xbfd25e8cd0364141,
+            0xbaaedce6af48a03b,
+            0xfffffffffffffffe,
+            0xffffffffffffffff,
+        ];
+        const INV: u64 = 0x4b0dff665588b13f;
+        let mut rng = ChaChaRng::seed_from_u64(FQ_REDUCE_SEED);
+
+        let deterministic = [
+            [0u64; 4],
+            MODULUS,
+            [0x1, 0x0, 0x0, 0x0],
+            [u64::MAX; 4],
+        ];
+
+        for limbs in deterministic {
+            let expected = reference_montgomery_reduce_short(limbs, &MODULUS, INV);
+            let actual = Fq(limbs).montgomery_reduce_256().0;
+            assert_eq!(actual, expected);
+        }
+
+        for _ in 0..128 {
+            let limbs = [
+                rng.next_u64(),
+                rng.next_u64(),
+                rng.next_u64(),
+                rng.next_u64(),
+            ];
+            let expected = reference_montgomery_reduce_short(limbs, &MODULUS, INV);
+            let actual = Fq(limbs).montgomery_reduce_256().0;
+            assert_eq!(actual, expected);
         }
     }
 }
