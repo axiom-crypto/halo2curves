@@ -72,54 +72,59 @@ macro_rules! field_arithmetic_asm {
                 self.mul(self)
             }
 
+            // #[inline(always)]
+            // pub(crate) fn montgomery_reduce_256(&self) -> $field {
+            //     let (mut r0, mut r1, mut r2, mut r3) =
+            //         (self.0[0], self.0[1], self.0[2], self.0[3]);
+
+            //     // k0
+            //     let k0 = r0.wrapping_mul($inv);
+            //     let (_, mut carry) = crate::arithmetic::macx(r0, k0, $modulus.0[0]);
+            //     (r1, carry) = crate::arithmetic::mac(r1, k0, $modulus.0[1], carry);
+            //     (r2, carry) = crate::arithmetic::mac(r2, k0, $modulus.0[2], carry);
+            //     (r3, carry) = crate::arithmetic::mac(r3, k0, $modulus.0[3], carry);
+            //     r0 = carry;
+
+            //     // k1
+            //     let k1 = r1.wrapping_mul($inv);
+            //     let (_, mut carry) = crate::arithmetic::macx(r1, k1, $modulus.0[0]);
+            //     (r2, carry) = crate::arithmetic::mac(r2, k1, $modulus.0[1], carry);
+            //     (r3, carry) = crate::arithmetic::mac(r3, k1, $modulus.0[2], carry);
+            //     (r0, carry) = crate::arithmetic::mac(r0, k1, $modulus.0[3], carry);
+            //     r1 = carry;
+
+            //     // k2
+            //     let k2 = r2.wrapping_mul($inv);
+            //     let (_, mut carry) = crate::arithmetic::macx(r2, k2, $modulus.0[0]);
+            //     (r3, carry) = crate::arithmetic::mac(r3, k2, $modulus.0[1], carry);
+            //     (r0, carry) = crate::arithmetic::mac(r0, k2, $modulus.0[2], carry);
+            //     (r1, carry) = crate::arithmetic::mac(r1, k2, $modulus.0[3], carry);
+            //     r2 = carry;
+
+            //     // k3
+            //     let k3 = r3.wrapping_mul($inv);
+            //     let (_, mut carry) = crate::arithmetic::macx(r3, k3, $modulus.0[0]);
+            //     (r0, carry) = crate::arithmetic::mac(r0, k3, $modulus.0[1], carry);
+            //     (r1, carry) = crate::arithmetic::mac(r1, k3, $modulus.0[2], carry);
+            //     (r2, carry) = crate::arithmetic::mac(r2, k3, $modulus.0[3], carry);
+            //     r3 = carry;
+
+            //     // conditional subtraction
+            //     let (d0, borrow) = crate::arithmetic::sbb(r0, $modulus.0[0], 0);
+            //     let (d1, borrow) = crate::arithmetic::sbb(r1, $modulus.0[1], borrow);
+            //     let (d2, borrow) = crate::arithmetic::sbb(r2, $modulus.0[2], borrow);
+            //     let (d3, borrow) = crate::arithmetic::sbb(r3, $modulus.0[3], borrow);
+
+            //     let (d0, carry) = crate::arithmetic::adc(d0, $modulus.0[0] & borrow, 0);
+            //     let (d1, carry) = crate::arithmetic::adc(d1, $modulus.0[1] & borrow, carry);
+            //     let (d2, carry) = crate::arithmetic::adc(d2, $modulus.0[2] & borrow, carry);
+            //     let (d3, _) = crate::arithmetic::adc(d3, $modulus.0[3] & borrow, carry);
+
+            //     $field([d0, d1, d2, d3])
+            // }
+            
             #[inline(always)]
             pub(crate) fn montgomery_reduce_256(&self) -> $field {
-                /*
-                let (mut r0, mut r1, mut r2, mut r3) =
-                    (self.0[0], self.0[1], self.0[2], self.0[3]);
-
-                // k0
-                let k0 = r0.wrapping_mul($inv);
-                let (_, mut carry) = crate::arithmetic::macx(r0, k0, $modulus.0[0]);
-                (r1, carry) = crate::arithmetic::mac(r1, k0, $modulus.0[1], carry);
-                (r2, carry) = crate::arithmetic::mac(r2, k0, $modulus.0[2], carry);
-                (r3, carry) = crate::arithmetic::mac(r3, k0, $modulus.0[3], carry);
-
-                // k1
-                let k1 = r1.wrapping_mul($inv);
-                let (_, mut carry) = crate::arithmetic::macx(r1, k1, $modulus.0[0]);
-                (r2, carry) = crate::arithmetic::mac(r2, k1, $modulus.0[1], carry);
-                (r3, carry) = crate::arithmetic::mac(r3, k1, $modulus.0[2], carry);
-                (r0, carry) = crate::arithmetic::mac(r0, k1, $modulus.0[3], carry);
-
-                // k2
-                let k2 = r2.wrapping_mul($inv);
-                let (_, mut carry) = crate::arithmetic::macx(r2, k2, $modulus.0[0]);
-                (r3, carry) = crate::arithmetic::mac(r3, k2, $modulus.0[1], carry);
-                (r0, carry) = crate::arithmetic::mac(r0, k2, $modulus.0[2], carry);
-                (r1, carry) = crate::arithmetic::mac(r1, k2, $modulus.0[3], carry);
-
-                // k3
-                let k3 = r3.wrapping_mul($inv);
-                let (_, mut carry) = crate::arithmetic::macx(r3, k3, $modulus.0[0]);
-                (r0, carry) = crate::arithmetic::mac(r0, k3, $modulus.0[1], carry);
-                (r1, carry) = crate::arithmetic::mac(r1, k3, $modulus.0[2], carry);
-                (r2, carry) = crate::arithmetic::mac(r2, k3, $modulus.0[3], carry);
-
-                // conditional subtraction
-                let (d0, borrow) = crate::arithmetic::sbb(r0, $modulus.0[0], 0);
-                let (d1, borrow) = crate::arithmetic::sbb(r1, $modulus.0[1], borrow);
-                let (d2, borrow) = crate::arithmetic::sbb(r2, $modulus.0[2], borrow);
-                let (d3, borrow) = crate::arithmetic::sbb(r3, $modulus.0[3], borrow);
-                let (_, borrow_flag) = crate::arithmetic::sbb(carry, 0, borrow);
-
-                let (d0, carry) = crate::arithmetic::adc(d0, $modulus.0[0] & borrow_flag, 0);
-                let (d1, carry) = crate::arithmetic::adc(d1, $modulus.0[1] & borrow_flag, carry);
-                let (d2, carry) = crate::arithmetic::adc(d2, $modulus.0[2] & borrow_flag, carry);
-                let (d3, _) = crate::arithmetic::adc(d3, $modulus.0[3] & borrow_flag, carry);
-
-                $field([d0, d1, d2, d3])
-                */
                 let mut r0: u64;
                 let mut r1: u64;
                 let mut r2: u64;
@@ -306,88 +311,87 @@ macro_rules! field_arithmetic_asm {
                 }
                 $field([r0, r1, r2, r3])
             }
-            /// Multiplies `rhs` by `self`, returning the result.
+
+            // #[inline]
+            // fn montgomery_reduce(r: &[u64; 8]) -> $field {
+            //     let k = r[0].wrapping_mul($inv);
+            //     let (_, carry) = crate::arithmetic::mac(r[0], k, $modulus.0[0], 0);
+            //     let (r1, carry) = crate::arithmetic::mac(r[1], k, $modulus.0[1], carry);
+            //     let (r2, carry) = crate::arithmetic::mac(r[2], k, $modulus.0[2], carry);
+            //     let (r3, carry) = crate::arithmetic::mac(r[3], k, $modulus.0[3], carry);
+            //     let (r4, mut carry2) = crate::arithmetic::adc(r[4], 0, carry);
+
+            //     let k = r1.wrapping_mul($inv);
+            //     let (_, carry) = crate::arithmetic::mac(r1, k, $modulus.0[0], 0);
+            //     let (r2, carry) = crate::arithmetic::mac(r2, k, $modulus.0[1], carry);
+            //     let (r3, carry) = crate::arithmetic::mac(r3, k, $modulus.0[2], carry);
+            //     let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[3], carry);
+            //     let (r5, carry2_tmp) = crate::arithmetic::adc(r[5], carry2, carry);
+            //     carry2 = carry2_tmp;
+
+            //     let k = r2.wrapping_mul($inv);
+            //     let (_, carry) = crate::arithmetic::mac(r2, k, $modulus.0[0], 0);
+            //     let (r3, carry) = crate::arithmetic::mac(r3, k, $modulus.0[1], carry);
+            //     let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[2], carry);
+            //     let (r5, carry) = crate::arithmetic::mac(r5, k, $modulus.0[3], carry);
+            //     let (r6, carry2_tmp) = crate::arithmetic::adc(r[6], carry2, carry);
+            //     carry2 = carry2_tmp;
+
+            //     let k = r3.wrapping_mul($inv);
+            //     let (_, carry) = crate::arithmetic::mac(r3, k, $modulus.0[0], 0);
+            //     let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[1], carry);
+            //     let (r5, carry) = crate::arithmetic::mac(r5, k, $modulus.0[2], carry);
+            //     let (r6, carry) = crate::arithmetic::mac(r6, k, $modulus.0[3], carry);
+            //     let (r7, carry2) = crate::arithmetic::adc(r[7], carry2, carry);
+
+            //     let (d0, borrow) = crate::arithmetic::sbb(r4, $modulus.0[0], 0);
+            //     let (d1, borrow) = crate::arithmetic::sbb(r5, $modulus.0[1], borrow);
+            //     let (d2, borrow) = crate::arithmetic::sbb(r6, $modulus.0[2], borrow);
+            //     let (d3, borrow) = crate::arithmetic::sbb(r7, $modulus.0[3], borrow);
+            //     let (_, borrow) = crate::arithmetic::sbb(carry2, 0, borrow);
+
+            //     let (d0, carry) =
+            //         crate::arithmetic::adc(d0, $modulus.0[0] & borrow, 0);
+            //     let (d1, carry) =
+            //         crate::arithmetic::adc(d1, $modulus.0[1] & borrow, carry);
+            //     let (d2, carry) =
+            //         crate::arithmetic::adc(d2, $modulus.0[2] & borrow, carry);
+            //     let (d3, _) = crate::arithmetic::adc(d3, $modulus.0[3] & borrow, carry);
+
+            //     $field([d0, d1, d2, d3])
+            // }
+            // /// Multiplies `rhs` by `self`, returning the result.
+            // #[inline]
+            // pub fn mul(&self, rhs: &Self) -> $field {
+            //     let (r0, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[0], 0);
+            //     let (r1, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[1], carry);
+            //     let (r2, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[2], carry);
+            //     let (r3, r4) = crate::arithmetic::mac(0, self.0[0], rhs.0[3], carry);
+
+            //     let (r1, carry) = crate::arithmetic::mac(r1, self.0[1], rhs.0[0], 0);
+            //     let (r2, carry) = crate::arithmetic::mac(r2, self.0[1], rhs.0[1], carry);
+            //     let (r3, carry) = crate::arithmetic::mac(r3, self.0[1], rhs.0[2], carry);
+            //     let (r4, r5) = crate::arithmetic::mac(r4, self.0[1], rhs.0[3], carry);
+
+            //     let (r2, carry) = crate::arithmetic::mac(r2, self.0[2], rhs.0[0], 0);
+            //     let (r3, carry) = crate::arithmetic::mac(r3, self.0[2], rhs.0[1], carry);
+            //     let (r4, carry) = crate::arithmetic::mac(r4, self.0[2], rhs.0[2], carry);
+            //     let (r5, r6) = crate::arithmetic::mac(r5, self.0[2], rhs.0[3], carry);
+
+            //     let (r3, carry) = crate::arithmetic::mac(r3, self.0[3], rhs.0[0], 0);
+            //     let (r4, carry) = crate::arithmetic::mac(r4, self.0[3], rhs.0[1], carry);
+            //     let (r5, carry) = crate::arithmetic::mac(r5, self.0[3], rhs.0[2], carry);
+            //     let (r6, r7) = crate::arithmetic::mac(r6, self.0[3], rhs.0[3], carry);
+
+            //     Self::montgomery_reduce(&[r0, r1, r2, r3, r4, r5, r6, r7])
+            // }
+            
             #[inline]
             pub fn mul(&self, rhs: &Self) -> $field {
                 let mut r0: u64;
                 let mut r1: u64;
                 let mut r2: u64;
-                let mut r3: u64;
-
-                
-                /*
-                fn montgomery_reduce(r: &[u64; 8]) -> $field {
-                    let k = r[0].wrapping_mul($inv);
-                    let (_, carry) = crate::arithmetic::mac(r[0], k, $modulus.0[0], 0);
-                    let (r1, carry) = crate::arithmetic::mac(r[1], k, $modulus.0[1], carry);
-                    let (r2, carry) = crate::arithmetic::mac(r[2], k, $modulus.0[2], carry);
-                    let (r3, carry) = crate::arithmetic::mac(r[3], k, $modulus.0[3], carry);
-                    let (r4, mut carry2) = crate::arithmetic::adc(r[4], 0, carry);
-
-                    let k = r1.wrapping_mul($inv);
-                    let (_, carry) = crate::arithmetic::mac(r1, k, $modulus.0[0], 0);
-                    let (r2, carry) = crate::arithmetic::mac(r2, k, $modulus.0[1], carry);
-                    let (r3, carry) = crate::arithmetic::mac(r3, k, $modulus.0[2], carry);
-                    let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[3], carry);
-                    let (r5, carry2_tmp) = crate::arithmetic::adc(r[5], carry2, carry);
-                    carry2 = carry2_tmp;
-
-                    let k = r2.wrapping_mul($inv);
-                    let (_, carry) = crate::arithmetic::mac(r2, k, $modulus.0[0], 0);
-                    let (r3, carry) = crate::arithmetic::mac(r3, k, $modulus.0[1], carry);
-                    let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[2], carry);
-                    let (r5, carry) = crate::arithmetic::mac(r5, k, $modulus.0[3], carry);
-                    let (r6, carry2_tmp) = crate::arithmetic::adc(r[6], carry2, carry);
-                    carry2 = carry2_tmp;
-
-                    let k = r3.wrapping_mul($inv);
-                    let (_, carry) = crate::arithmetic::mac(r3, k, $modulus.0[0], 0);
-                    let (r4, carry) = crate::arithmetic::mac(r4, k, $modulus.0[1], carry);
-                    let (r5, carry) = crate::arithmetic::mac(r5, k, $modulus.0[2], carry);
-                    let (r6, carry) = crate::arithmetic::mac(r6, k, $modulus.0[3], carry);
-                    let (r7, carry2) = crate::arithmetic::adc(r[7], carry2, carry);
-
-                    let (d0, borrow) = crate::arithmetic::sbb(r4, $modulus.0[0], 0);
-                    let (d1, borrow) = crate::arithmetic::sbb(r5, $modulus.0[1], borrow);
-                    let (d2, borrow) = crate::arithmetic::sbb(r6, $modulus.0[2], borrow);
-                    let (d3, borrow) = crate::arithmetic::sbb(r7, $modulus.0[3], borrow);
-                    let (_, borrow) = crate::arithmetic::sbb(carry2, 0, borrow);
-
-                    let (d0, carry) =
-                        crate::arithmetic::adc(d0, $modulus.0[0] & borrow, 0);
-                    let (d1, carry) =
-                        crate::arithmetic::adc(d1, $modulus.0[1] & borrow, carry);
-                    let (d2, carry) =
-                        crate::arithmetic::adc(d2, $modulus.0[2] & borrow, carry);
-                    let (d3, _) = crate::arithmetic::adc(d3, $modulus.0[3] & borrow, carry);
-
-                    $field([d0, d1, d2, d3])
-                }
-
-                pub fn mul(&self, rhs: &Self) -> $field {
-                    let (r0, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[0], 0);
-                    let (r1, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[1], carry);
-                    let (r2, carry) = crate::arithmetic::mac(0, self.0[0], rhs.0[2], carry);
-                    let (r3, r4) = crate::arithmetic::mac(0, self.0[0], rhs.0[3], carry);
-
-                    let (r1, carry) = crate::arithmetic::mac(r1, self.0[1], rhs.0[0], 0);
-                    let (r2, carry) = crate::arithmetic::mac(r2, self.0[1], rhs.0[1], carry);
-                    let (r3, carry) = crate::arithmetic::mac(r3, self.0[1], rhs.0[2], carry);
-                    let (r4, r5) = crate::arithmetic::mac(r4, self.0[1], rhs.0[3], carry);
-
-                    let (r2, carry) = crate::arithmetic::mac(r2, self.0[2], rhs.0[0], 0);
-                    let (r3, carry) = crate::arithmetic::mac(r3, self.0[2], rhs.0[1], carry);
-                    let (r4, carry) = crate::arithmetic::mac(r4, self.0[2], rhs.0[2], carry);
-                    let (r5, r6) = crate::arithmetic::mac(r5, self.0[2], rhs.0[3], carry);
-
-                    let (r3, carry) = crate::arithmetic::mac(r3, self.0[3], rhs.0[0], 0);
-                    let (r4, carry) = crate::arithmetic::mac(r4, self.0[3], rhs.0[1], carry);
-                    let (r5, carry) = crate::arithmetic::mac(r5, self.0[3], rhs.0[2], carry);
-                    let (r6, r7) = crate::arithmetic::mac(r6, self.0[3], rhs.0[3], carry);
-
-                    Self::montgomery_reduce(&[r0, r1, r2, r3, r4, r5, r6, r7])
-                }
-                */
+                let mut r3: u64;            
                 unsafe {
                     asm!(
                         // schoolbook multiplication

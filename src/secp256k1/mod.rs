@@ -481,35 +481,38 @@ mod tests {
         (r1, carry) = mac(r1, k0, modulus[1], carry);
         (r2, carry) = mac(r2, k0, modulus[2], carry);
         (r3, carry) = mac(r3, k0, modulus[3], carry);
+        r0 = carry;
 
         let k1 = r1.wrapping_mul(inv);
         let (_, mut carry) = macx(r1, k1, modulus[0]);
         (r2, carry) = mac(r2, k1, modulus[1], carry);
         (r3, carry) = mac(r3, k1, modulus[2], carry);
         (r0, carry) = mac(r0, k1, modulus[3], carry);
+        r1 = carry;
 
         let k2 = r2.wrapping_mul(inv);
         let (_, mut carry) = macx(r2, k2, modulus[0]);
         (r3, carry) = mac(r3, k2, modulus[1], carry);
         (r0, carry) = mac(r0, k2, modulus[2], carry);
         (r1, carry) = mac(r1, k2, modulus[3], carry);
+        r2 = carry;
 
         let k3 = r3.wrapping_mul(inv);
         let (_, mut carry) = macx(r3, k3, modulus[0]);
         (r0, carry) = mac(r0, k3, modulus[1], carry);
         (r1, carry) = mac(r1, k3, modulus[2], carry);
         (r2, carry) = mac(r2, k3, modulus[3], carry);
+        r3 = carry;
 
         let (d0, borrow) = sbb(r0, modulus[0], 0);
         let (d1, borrow) = sbb(r1, modulus[1], borrow);
         let (d2, borrow) = sbb(r2, modulus[2], borrow);
         let (d3, borrow) = sbb(r3, modulus[3], borrow);
-        let (_, borrow_flag) = sbb(carry, 0, borrow);
 
-        let (d0, carry) = adc(d0, modulus[0] & borrow_flag, 0);
-        let (d1, carry) = adc(d1, modulus[1] & borrow_flag, carry);
-        let (d2, carry) = adc(d2, modulus[2] & borrow_flag, carry);
-        let (d3, _) = adc(d3, modulus[3] & borrow_flag, carry);
+        let (d0, carry) = adc(d0, modulus[0] & borrow, 0);
+        let (d1, carry) = adc(d1, modulus[1] & borrow, carry);
+        let (d2, carry) = adc(d2, modulus[2] & borrow, carry);
+        let (d3, _) = adc(d3, modulus[3] & borrow, carry);
 
         [d0, d1, d2, d3]
     }
