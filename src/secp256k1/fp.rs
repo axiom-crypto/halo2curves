@@ -136,7 +136,7 @@ impl_from_u64!(Fp, R2);
 #[cfg(not(feature = "asm"))]
 field_arithmetic!(Fp, MODULUS, INV, dense);
 #[cfg(feature = "asm")]
-field_arithmetic_asm!(Fp, MODULUS, INV);
+field_arithmetic_asm!(Fp, MODULUS, STATIC_INV);
 impl_sum_prod!(Fp);
 
 #[cfg(target_pointer_width = "64")]

@@ -30,7 +30,6 @@ mod tests {
     const FQ_SEED_XOR: u64 = 0x0f0f_0f0f_0f0f_0f0f;
     const FQ_REDUCE_SEED: u64 = 0xcafe_f00d_dead_f00d;
 
-
     #[test]
     fn test_secp256k1_misc() {
         fn log_fp(label: &str, value: &Fp) {
@@ -652,7 +651,6 @@ mod tests {
         }
     }
 
-
     #[cfg(feature = "asm")]
     #[test]
     fn test_secp256k1_fq_mul_matches_reference() {
@@ -684,12 +682,7 @@ mod tests {
         const INV: u64 = 0xd838091dd2253531;
         let mut rng = ChaChaRng::seed_from_u64(FP_REDUCE_SEED);
 
-        let deterministic = [
-            [0u64; 4],
-            MODULUS,
-            [0x1, 0x0, 0x0, 0x0],
-            [u64::MAX; 4],
-        ];
+        let deterministic = [[0u64; 4], MODULUS, [0x1, 0x0, 0x0, 0x0], [u64::MAX; 4]];
 
         for limbs in deterministic {
             let expected = reference_montgomery_reduce_short(limbs, &MODULUS, INV);
@@ -722,12 +715,7 @@ mod tests {
         const INV: u64 = 0x4b0dff665588b13f;
         let mut rng = ChaChaRng::seed_from_u64(FQ_REDUCE_SEED);
 
-        let deterministic = [
-            [0u64; 4],
-            MODULUS,
-            [0x1, 0x0, 0x0, 0x0],
-            [u64::MAX; 4],
-        ];
+        let deterministic = [[0u64; 4], MODULUS, [0x1, 0x0, 0x0, 0x0], [u64::MAX; 4]];
 
         for limbs in deterministic {
             let expected = reference_montgomery_reduce_short(limbs, &MODULUS, INV);
