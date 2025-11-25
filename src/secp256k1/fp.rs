@@ -62,7 +62,6 @@ const MODULUS_STR: &str = "0xfffffffffffffffffffffffffffffffffffffffffffffffffff
 
 /// INV = -(p^{-1} mod 2^64) mod 2^64
 const INV: u64 = 0xd838091dd2253531;
-static STATIC_INV: u64 = INV;
 
 /// R = 2^256 mod p
 /// 0x1000003d1
@@ -136,7 +135,7 @@ impl_from_u64!(Fp, R2);
 #[cfg(not(feature = "asm"))]
 field_arithmetic!(Fp, MODULUS, INV, dense);
 #[cfg(feature = "asm")]
-field_arithmetic_asm!(Fp, MODULUS, STATIC_INV);
+field_arithmetic_asm!(Fp, MODULUS, INV);
 impl_sum_prod!(Fp);
 
 #[cfg(target_pointer_width = "64")]
