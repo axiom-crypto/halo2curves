@@ -21,7 +21,7 @@ mod tests {
 
     const VECTORS_PER_OP: usize = 16;
 
-    // Do not change these seeds without updating the expected results in the tests
+    // Do not modify these seeds without updating the expected results in the tests
     const FP_ADD_SEED: u64 = 0xaddf_00dd_eadc_0ded;
     const FP_SUB_SEED: u64 = 0x5ab5_eed0_cafe_babe;
     const FP_MUL_SEED: u64 = 0x600d_600d_bad0_f00d;
