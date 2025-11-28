@@ -30,6 +30,7 @@ mod tests {
     const FQ_SEED_XOR: u64 = 0x0f0f_0f0f_0f0f_0f0f;
     const FQ_REDUCE_SEED: u64 = 0xcafe_f00d_dead_f00d;
 
+    #[cfg(feature = "asm")]
     #[test]
     fn test_secp256k1_misc() {
         fn log_fp(label: &str, value: &Fp) {
@@ -68,6 +69,7 @@ mod tests {
         assert_eq!((one * -one), -one);
         assert_eq!((one * one), one);
     }
+    #[cfg(feature = "asm")]
     #[test]
     fn test_secp256k1_hash_to_curve_vectors() {
         const EXPECTED: [&str; 10] = [
@@ -99,6 +101,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "asm")]
     #[test]
     fn test_secp256k1_fp_arithmetic_vectors() {
         fn encode(fp: &Fp) -> String {
@@ -260,6 +263,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "asm")]
     #[test]
     fn test_secp256k1_fq_arithmetic_vectors() {
         fn encode(fq: &Fq) -> String {

@@ -81,6 +81,7 @@ macro_rules! field_arithmetic_asm {
 
 
             /// Rust reference implementation:
+            // ```rust
             /// fn montgomery_reduce(r: [u64; 8], modulus: [u64; 4], inv: u64) -> [u64; 4] {
             ///     let (mut r0, mut r1, mut r2, mut r3, mut r4, mut r5, mut r6, mut r7) =
             ///         (r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
@@ -133,6 +134,7 @@ macro_rules! field_arithmetic_asm {
             ///
             ///     [d0, d1, d2, d3]
             /// }
+            // ```
             #[inline]
             pub fn montgomery_reduce(r: &[u64; 8]) -> $field {
                 let mut r0: u64;
@@ -373,6 +375,7 @@ macro_rules! field_arithmetic_asm {
             }
 
             /// Multiplies two field elements using x86-64 assembly
+            /// ```rust
             /// fn mul(a: [u64; 4], b: [u64; 4], modulus: [u64; 4], inv: u64) -> [u64; 4] {
             ///     // Step 1: Schoolbook multiplication to get 512-bit product
             ///     fn mul_512(a: [u64; 4], b: [u64; 4]) -> [u64; 8] {
@@ -403,6 +406,7 @@ macro_rules! field_arithmetic_asm {
             ///     let product = mul_512(a, b);
             ///     montgomery_reduce(product, modulus, inv)
             /// }
+            /// ```
             #[inline]
             pub fn mul(&self, rhs: &Self) -> $field {
                 let mut r0: u64;
