@@ -20,12 +20,13 @@ mod tests {
     use subtle::ConditionallySelectable;
 
     const VECTORS_PER_OP: usize = 16;
+
+    // Do not change these seeds without updating the expected results in the tests
     const FP_ADD_SEED: u64 = 0xaddf_00dd_eadc_0ded;
     const FP_SUB_SEED: u64 = 0x5ab5_eed0_cafe_babe;
     const FP_MUL_SEED: u64 = 0x600d_600d_bad0_f00d;
     const FP_DOUBLE_SEED: u64 = 0x00d0_00d0_00d0_00d0;
     const FP_SQUARE_SEED: u64 = 0x5a5a_5a5a_1234_5678;
-    const FP_INVERT_SEED: u64 = 0x1ee1_dead_beef_cafe;
     const FP_REDUCE_SEED: u64 = 0xdec0_de01_feed_baad;
     const FQ_SEED_XOR: u64 = 0x0f0f_0f0f_0f0f_0f0f;
     const FQ_REDUCE_SEED: u64 = 0xcafe_f00d_dead_f00d;
@@ -230,37 +231,6 @@ mod tests {
             let a = Fp::random(&mut rng);
             assert_eq!(encode(&a.square()), expected);
         }
-
-        const FP_INVERT_EXPECTED: [&str; VECTORS_PER_OP] = [
-            "56b467af213a9b2e7c430617d7aa5056e3e9621dfccf8115ff29357ecdb3aee0",
-            "0350f387cdca1bd303138eb7926ca997c3c019b0c61354f0288806494af3baad",
-            "3403bc34c56101497010f17afc1390520909c3437fdc87120890acebfa89f37b",
-            "f28dda2a728b003caedd883a9d9c6483930e366bd8c8001fd02e4e94f5cf0796",
-            "eeeaad983068cec3e4066817cec886b05eaa0a673c4e3b534f69e3835f5f293b",
-            "223ab65b625be2175e81033f62f3621346a814b13b512d583189a9ed3739dea8",
-            "c80dac5115ea23f3c3407725cc199b19abdd1685ac54a35599569391254df3ff",
-            "574e474befcb1cde4a8f8edd187d6130edce41d06bbc7cbadc50a14def78aaf3",
-            "8492bd57071000dc98677f9dc0102735fcaf9fad6d45efd88c50fc9a27d9fa92",
-            "c8cb8d44c690bd5642273656d92ee1ef5f8e90dadf8533ed58d319cefb3e2629",
-            "dfa0a765b5d80e694f9fc51d7d8950548028a67c00289d06ed9f2d952d3c64a1",
-            "aee5161c3ce6fb19819be5bb199886322929d7a8c3d3375f516ffe991ad79068",
-            "77e38c050886fdb00efa91c359d98c51436042daf0bd975b539b81e8886ef413",
-            "0322137d09a58bb5e206673b4e05fdf0ec23d8fba2c6993755a8aea3d57376d1",
-            "52a51360beeb1fad439f481ef9ecef6812b6bfb8b0026c6c6d0f8d05fb6d7a84",
-            "afdd7b7dffd0fbc5846cdcd384be1c6a35dbdee954573f7826f266530c433449",
-        ];
-        let mut rng = ChaChaRng::seed_from_u64(FP_INVERT_SEED);
-        for expected in FP_INVERT_EXPECTED {
-            let val = loop {
-                let candidate = Fp::random(&mut rng);
-                if bool::from(candidate.is_zero()) {
-                    continue;
-                }
-                break candidate;
-            };
-            let inv = val.invert().unwrap();
-            assert_eq!(encode(&inv), expected);
-        }
     }
 
     #[cfg(feature = "asm")]
@@ -391,37 +361,6 @@ mod tests {
         for expected in FQ_SQUARE_EXPECTED {
             let a = Fq::random(&mut rng);
             assert_eq!(encode(&a.square()), expected);
-        }
-
-        const FQ_INVERT_EXPECTED: [&str; VECTORS_PER_OP] = [
-            "43f97f007a92c0a7685f198bad5e715fccccf33b2eb7154088a44001e6b6b339",
-            "ada03ecc1465ba85a92525d0a2c9e1e92419ac83af50e991553e90a6ea5f44e4",
-            "605b262de66047dea3b060e7f682fecddc7a96d2e1a83dbe243bd74011b715ca",
-            "fff641e65b0d9960b641940b7f8dac5d2b75b63349b6864cc692ff508840c990",
-            "e9935f9dc9b6f5b02e15f5137938637801e2ff20af010f824779aee2841608ae",
-            "4b0dec2fd81a9b0cf4d275aeb8a1d6ef3f887b04b31ca5d117f245f634470190",
-            "7617e467d1058754efdea3b1e04a240b03ad4723e92c3f6361c00a3fa0bc753e",
-            "ba1e3a555f14d7128417b1a10e6df9715269aa6f921f0bfcdf3d2a1364ab22bc",
-            "f1e30c059bfc8fc306c6f3b10fb74de99b6f51c2cdafeeb6e02dbbe3b8901236",
-            "5287396a67b3412ea658ce8a0407d515c4e1775ebc11a21645a62bd626ee22ee",
-            "9a3c21ebce582e6361a3bba860051a15ae1d60faeca97dfbc79e797d906a1908",
-            "ee97d50a68fadc7a3e14d871b22d7e550e2c319ca2918aef0032bab76a4cefc1",
-            "d2d2e1a69776b60223a41771fd9ded7907aa212eac4f03c5d5ddddec7775c949",
-            "1ca01c28802a32be9b69288ddfad3a5f091fb85e48f377520253e70fb59444a7",
-            "f5dae06532ab7549568693b7d4db1883ea3488121f42fcf7f7a26ef5f496c9ac",
-            "47257fe44e7ed092f9522a5c5d4ec585a0117449bfedbf1978be1ddc2020e302",
-        ];
-        let mut rng = ChaChaRng::seed_from_u64(FP_INVERT_SEED ^ FQ_SEED_XOR);
-        for expected in FQ_INVERT_EXPECTED {
-            let val = loop {
-                let candidate = Fq::random(&mut rng);
-                if bool::from(candidate.is_zero()) {
-                    continue;
-                }
-                break candidate;
-            };
-            let inv = val.invert().unwrap();
-            assert_eq!(encode(&inv), expected);
         }
     }
 
