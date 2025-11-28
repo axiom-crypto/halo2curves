@@ -1,9 +1,14 @@
-use crate::arithmetic::{adc, bigint_geq, mac, macx, sbb};
+#[cfg(feature = "asm")]
+use crate::secp256k1::assembly::field_arithmetic_asm;
+#[cfg(not(feature = "asm"))]
+use crate::{arithmetic::macx, field_arithmetic, field_specific};
+
+use crate::arithmetic::{adc, bigint_geq, mac, sbb};
 use crate::extend_field_legendre;
 use crate::ff::{FromUniformBytes, PrimeField, WithSmallOrderMulGroup};
 use crate::{
-    field_arithmetic, field_bits, field_common, field_specific, impl_add_binop_specify_output,
-    impl_binops_additive, impl_binops_additive_specify_output, impl_binops_multiplicative,
+    field_bits, field_common, impl_add_binop_specify_output, impl_binops_additive,
+    impl_binops_additive_specify_output, impl_binops_multiplicative,
     impl_binops_multiplicative_mixed, impl_from_u64, impl_sub_binop_specify_output, impl_sum_prod,
 };
 use core::convert::TryInto;
@@ -53,7 +58,6 @@ const MODULUS_STR: &str = "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd
 
 /// INV = -(q^{-1} mod 2^64) mod 2^64
 const INV: u64 = 0x4b0dff665588b13f;
-
 /// R = 2^256 mod q
 /// 0x14551231950b75fc4402da1732fc9bebf
 const R: Fq = Fq([0x402da1732fc9bebf, 0x4551231950b75fc4, 0x1, 0]);
@@ -139,7 +143,10 @@ field_common!(
     R3
 );
 impl_from_u64!(Fq, R2);
+#[cfg(not(feature = "asm"))]
 field_arithmetic!(Fq, MODULUS, INV, dense);
+#[cfg(feature = "asm")]
+field_arithmetic_asm!(Fq, MODULUS, INV);
 impl_sum_prod!(Fq);
 
 #[cfg(target_pointer_width = "64")]
