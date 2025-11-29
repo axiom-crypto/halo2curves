@@ -16,46 +16,45 @@ macro_rules! field_arithmetic_asm {
                 let mut r3: u64;
                 unsafe {
                     asm!(
-                        // load a array to former registers
+                        // load a array to registers
                         "mov r8, qword ptr [{a_ptr} + 0]",
                         "mov r9, qword ptr [{a_ptr} + 8]",
                         "mov r10, qword ptr [{a_ptr} + 16]",
                         "mov r11, qword ptr [{a_ptr} + 24]",
 
-                        // // add a array and b array with carry
+                        // double by adding to itself
                         "add r8, r8",
                         "adc r9, r9",
                         "adc r10, r10",
                         "adc r11, r11",
 
-                        // copy result array to latter registers
-                        "mov r12, r8",
-                        "mov r13, r9",
-                        "mov r14, r10",
-                        "mov r15, r11",
+                        // try subtracting modulus into rax, rcx, rdx, rsi
+                        "mov rax, r8",
+                        "mov rcx, r9",
+                        "mov rdx, r10",
+                        "mov rsi, r11",
 
-                        // mod reduction
-                        "sub r12, qword ptr [{m_ptr} + 0]",
-                        "sbb r13, qword ptr [{m_ptr} + 8]",
-                        "sbb r14, qword ptr [{m_ptr} + 16]",
-                        "sbb r15, qword ptr [{m_ptr} + 24]",
+                        "sub rax, qword ptr [{m_ptr} + 0]",
+                        "sbb rcx, qword ptr [{m_ptr} + 8]",
+                        "sbb rdx, qword ptr [{m_ptr} + 16]",
+                        "sbb rsi, qword ptr [{m_ptr} + 24]",
 
-                        // if carry copy former registers to out areas
-                        "cmovc r12, r8",
-                        "cmovc r13, r9",
-                        "cmovc r14, r10",
-                        "cmovc r15, r11",
+                        // if no carry, use the subtracted value; otherwise keep the original
+                        "cmovnc r8, rax",
+                        "cmovnc r9, rcx",
+                        "cmovnc r10, rdx",
+                        "cmovnc r11, rsi",
 
                         m_ptr = in(reg) $modulus.0.as_ptr(),
                         a_ptr = in(reg) self.0.as_ptr(),
-                        out("r8") _,
-                        out("r9") _,
-                        out("r10") _,
-                        out("r11") _,
-                        out("r12") r0,
-                        out("r13") r1,
-                        out("r14") r2,
-                        out("r15") r3,
+                        out("rax") _,
+                        out("rcx") _,
+                        out("rdx") _,
+                        out("rsi") _,
+                        out("r8") r0,
+                        out("r9") r1,
+                        out("r10") r2,
+                        out("r11") r3,
                         options(pure, readonly)
                     );
                 }
@@ -190,8 +189,6 @@ macro_rules! field_arithmetic_asm {
                         out("r10") r2,
                         out("r11") r3,
                         out("r12") _,
-                        out("r13") _,
-                        out("r14") _,
                         out("r15") _,
                         options(pure, readonly)
                     )
@@ -447,51 +444,50 @@ macro_rules! field_arithmetic_asm {
                 let mut r3: u64;
                 unsafe {
                     asm!(
-                        // init modulus area
-                        "mov r12, qword ptr [{m_ptr} + 0]",
-                        "mov r13, qword ptr [{m_ptr} + 8]",
-                        "mov r14, qword ptr [{m_ptr} + 16]",
-                        "mov r15, qword ptr [{m_ptr} + 24]",
-
-                        // load a array to former registers
+                        // load a array to registers
                         "mov r8, qword ptr [{a_ptr} + 0]",
                         "mov r9, qword ptr [{a_ptr} + 8]",
                         "mov r10, qword ptr [{a_ptr} + 16]",
                         "mov r11, qword ptr [{a_ptr} + 24]",
 
-                        // sub a array and b array with borrow
+                        // sub b array from a with borrow
                         "sub r8, qword ptr [{b_ptr} + 0]",
                         "sbb r9, qword ptr [{b_ptr} + 8]",
                         "sbb r10, qword ptr [{b_ptr} + 16]",
                         "sbb r11, qword ptr [{b_ptr} + 24]",
 
-                        // Mask: rax contains 0xFFFF if < m or 0x0000 otherwise
-                        "sbb rax, rax",
+                        // Create mask: rsi contains 0xFFFFFFFFFFFFFFFF if borrow or 0x0 otherwise
+                        "sbb rsi, rsi",
 
-                        // Zero-out the modulus if a-b < m or leave as-is otherwise
-                        "and r12, rax",
-                        "and r13, rax",
-                        "and r14, rax",
-                        "and r15, rax",
+                        // Load and conditionally mask modulus
+                        "mov rax, qword ptr [{m_ptr} + 0]",
+                        "mov rcx, qword ptr [{m_ptr} + 8]",
+                        "mov rdx, qword ptr [{m_ptr} + 16]",
+                        "mov rdi, qword ptr [{m_ptr} + 24]",
 
-                        // Add zero if a-b < m or a-b+m otherwise
-                        "add  r12, r8",
-                        "adc  r13, r9",
-                        "adc  r14, r10",
-                        "adc  r15, r11",
+                        "and rax, rsi",
+                        "and rcx, rsi",
+                        "and rdx, rsi",
+                        "and rdi, rsi",
+
+                        // Add masked modulus (0 if no borrow, modulus if borrow)
+                        "add r8, rax",
+                        "adc r9, rcx",
+                        "adc r10, rdx",
+                        "adc r11, rdi",
 
                         m_ptr = in(reg) $modulus.0.as_ptr(),
                         a_ptr = in(reg) self.0.as_ptr(),
                         b_ptr = in(reg) rhs.0.as_ptr(),
                         out("rax") _,
-                        out("r8") _,
-                        out("r9") _,
-                        out("r10") _,
-                        out("r11") _,
-                        out("r12") r0,
-                        out("r13") r1,
-                        out("r14") r2,
-                        out("r15") r3,
+                        out("rcx") _,
+                        out("rdx") _,
+                        out("rsi") _,
+                        out("rdi") _,
+                        out("r8") r0,
+                        out("r9") r1,
+                        out("r10") r2,
+                        out("r11") r3,
                         options(pure, readonly)
                     );
                 }
@@ -507,7 +503,7 @@ macro_rules! field_arithmetic_asm {
                 let mut r3: u64;
                 unsafe {
                     asm!(
-                        // load a array to former registers
+                        // load a array to registers
                         "mov r8, qword ptr [{a_ptr} + 0]",
                         "mov r9, qword ptr [{a_ptr} + 8]",
                         "mov r10, qword ptr [{a_ptr} + 16]",
@@ -519,35 +515,34 @@ macro_rules! field_arithmetic_asm {
                         "adc r10, qword ptr [{b_ptr} + 16]",
                         "adc r11, qword ptr [{b_ptr} + 24]",
 
-                        // copy result array to latter registers
-                        "mov r12, r8",
-                        "mov r13, r9",
-                        "mov r14, r10",
-                        "mov r15, r11",
+                        // try subtracting modulus into rax, rcx, rdx, rsi
+                        "mov rax, r8",
+                        "mov rcx, r9",
+                        "mov rdx, r10",
+                        "mov rsi, r11",
 
-                        // mod reduction
-                        "sub r12, qword ptr [{m_ptr} + 0]",
-                        "sbb r13, qword ptr [{m_ptr} + 8]",
-                        "sbb r14, qword ptr [{m_ptr} + 16]",
-                        "sbb r15, qword ptr [{m_ptr} + 24]",
+                        "sub rax, qword ptr [{m_ptr} + 0]",
+                        "sbb rcx, qword ptr [{m_ptr} + 8]",
+                        "sbb rdx, qword ptr [{m_ptr} + 16]",
+                        "sbb rsi, qword ptr [{m_ptr} + 24]",
 
-                        // if carry copy former registers to out areas
-                        "cmovc r12, r8",
-                        "cmovc r13, r9",
-                        "cmovc r14, r10",
-                        "cmovc r15, r11",
+                        // if no carry, use the subtracted value; otherwise keep the original
+                        "cmovnc r8, rax",
+                        "cmovnc r9, rcx",
+                        "cmovnc r10, rdx",
+                        "cmovnc r11, rsi",
 
                         m_ptr = in(reg) $modulus.0.as_ptr(),
                         a_ptr = in(reg) self.0.as_ptr(),
                         b_ptr = in(reg) rhs.0.as_ptr(),
-                        out("r8") _,
-                        out("r9") _,
-                        out("r10") _,
-                        out("r11") _,
-                        out("r12") r0,
-                        out("r13") r1,
-                        out("r14") r2,
-                        out("r15") r3,
+                        out("rax") _,
+                        out("rcx") _,
+                        out("rdx") _,
+                        out("rsi") _,
+                        out("r8") r0,
+                        out("r9") r1,
+                        out("r10") r2,
+                        out("r11") r3,
                         options(pure, readonly)
                     );
                 }
@@ -563,7 +558,7 @@ macro_rules! field_arithmetic_asm {
                 let mut r3: u64;
                 unsafe {
                     asm!(
-                        // load a array to former registers
+                        // load modulus and subtract self
                         "mov r8, qword ptr [{m_ptr} + 0]",
                         "mov r9, qword ptr [{m_ptr} + 8]",
                         "mov r10, qword ptr [{m_ptr} + 16]",
@@ -574,34 +569,37 @@ macro_rules! field_arithmetic_asm {
                         "sbb r10, qword ptr [{a_ptr} + 16]",
                         "sbb r11, qword ptr [{a_ptr} + 24]",
 
-                        "mov r12, qword ptr [{a_ptr} + 0]",
-                        "mov r13, qword ptr [{a_ptr} + 8]",
-                        "mov r14, qword ptr [{a_ptr} + 16]",
-                        "mov r15, qword ptr [{a_ptr} + 24]",
+                        // Check if self is zero by ORing all limbs
+                        "mov rax, qword ptr [{a_ptr} + 0]",
+                        "mov rcx, qword ptr [{a_ptr} + 8]",
+                        "mov rdx, qword ptr [{a_ptr} + 16]",
+                        "mov rsi, qword ptr [{a_ptr} + 24]",
 
-                        "or r12, r13",
-                        "or r14, r15",
-                        "or r12, r14",
+                        "or rax, rcx",
+                        "or rdx, rsi",
+                        "or rax, rdx",
 
-                        "mov r13, 0xffffffffffffffff",
-                        "cmp r12, 0x0000000000000000",
-                        "cmove r13, r12",
+                        // Create mask: all 1s if non-zero, all 0s if zero
+                        "mov rcx, 0xffffffffffffffff",
+                        "cmp rax, 0x0000000000000000",
+                        "cmove rcx, rax",
 
-                        "and r8, r13",
-                        "and r9, r13",
-                        "and r10, r13",
-                        "and r11, r13",
+                        // Apply mask to result
+                        "and r8, rcx",
+                        "and r9, rcx",
+                        "and r10, rcx",
+                        "and r11, rcx",
 
                         a_ptr = in(reg) self.0.as_ptr(),
                         m_ptr = in(reg) $modulus.0.as_ptr(),
+                        out("rax") _,
+                        out("rcx") _,
+                        out("rdx") _,
+                        out("rsi") _,
                         out("r8") r0,
                         out("r9") r1,
                         out("r10") r2,
                         out("r11") r3,
-                        out("r12") _,
-                        out("r13") _,
-                        out("r14") _,
-                        out("r15") _,
                         options(pure, readonly)
                     )
                 }
