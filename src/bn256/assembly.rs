@@ -190,8 +190,6 @@ macro_rules! field_arithmetic_asm {
                         out("r10") r2,
                         out("r11") r3,
                         out("r12") _,
-                        out("r13") _,
-                        out("r14") _,
                         out("r15") _,
                         options(pure, readonly)
                     )
