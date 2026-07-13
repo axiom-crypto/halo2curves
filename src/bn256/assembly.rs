@@ -190,8 +190,6 @@ macro_rules! field_arithmetic_asm {
                         out("r10") r2,
                         out("r11") r3,
                         out("r12") _,
-                        out("r13") _,
-                        out("r14") _,
                         out("r15") _,
                         options(pure, readonly)
                     )
@@ -250,7 +248,7 @@ macro_rules! field_arithmetic_asm {
                         //   Reduction
                         //   m = t[0] * m0ninv mod 2^w
                         "mov  rdx, r11",
-                        "imul rdx, {inv}",
+                        "imul rdx, rcx",
                         "xor  r15, r15",
                         //   C,_ := t[0] + m*M[0]
                         "mulx r15, r10, qword ptr [{m_ptr} + 0]",
@@ -294,7 +292,7 @@ macro_rules! field_arithmetic_asm {
                         //   Reduction
                         //   m = t[0] * m0ninv mod 2^w
                         "mov  rdx, r11",
-                        "imul rdx, {inv}",
+                        "imul rdx, rcx",
                         "xor  r15, r15",
                         //   C,_ := t[0] + m*M[0]
                         "mulx r15, r10, qword ptr [{m_ptr} + 0]",
@@ -338,7 +336,7 @@ macro_rules! field_arithmetic_asm {
                         //   Reduction
                         //   m = t[0] * m0ninv mod 2^w
                         "mov  rdx, r11",
-                        "imul rdx, {inv}",
+                        "imul rdx, rcx",
                         "xor  r15, r15",
                         //   C,_ := t[0] + m*M[0]
                         "mulx r15, r10, qword ptr [{m_ptr} + 0]",
@@ -382,7 +380,7 @@ macro_rules! field_arithmetic_asm {
                         //   Reduction
                         //   m = t[0] * m0ninv mod 2^w
                         "mov  rdx, r11",
-                        "imul rdx, {inv}",
+                        "imul rdx, rcx",
                         "xor  r15, r15",
                         //   C,_ := t[0] + m*M[0]
                         "mulx r15, r10, qword ptr [{m_ptr} + 0]",
@@ -422,7 +420,7 @@ macro_rules! field_arithmetic_asm {
                         m_ptr = in(reg) $modulus.0.as_ptr(),
                         a_ptr = in(reg) self.0.as_ptr(),
                         b_ptr = in(reg) rhs.0.as_ptr(),
-                        inv = in(reg) $inv,
+                        in("rcx") $inv,
                         out("rax") r2,
                         out("rdx") _,
                         out("r10") _,
